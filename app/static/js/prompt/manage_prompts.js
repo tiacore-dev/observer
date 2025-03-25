@@ -6,25 +6,8 @@ $(document).ready(function () {
     if (!token) {
         console.warn('JWT токен отсутствует. Перенаправление на главную страницу.');
         window.location.href = '/';
-    } else {
-        // Проверка валидности токена на сервере
-        $.ajax({
-            url: '/protected',
-            type: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            },
-            success: function (response) {
-                loadPrompts();
-                console.log('Токен валидный, пользователь: ', response.logged_in_as);
-            },
-            error: function (xhr, status, error) {
-                console.error('Ошибка проверки токена:', error);
-                window.location.href = '/';
-            }
-        });
-    }
-
+    } 
+    loadPrompts();
     // Функция для загрузки промптов
     function loadPrompts() {
         console.log('Загрузка промптов...');

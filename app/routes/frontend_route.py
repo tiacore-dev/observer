@@ -23,13 +23,19 @@ async def serve_index(request: Request):
     return templates.TemplateResponse("auth/home.html", {"request": request})
 
 
-# # 🔥 Добавляем страницу со списком пользователей
-# @frontend_router.get("/users", response_class=HTMLResponse)
-# async def serve_users(request: Request):
-#     return templates.TemplateResponse("users.html", {"request": request})
+# 🔥 Добавляем страницу со списком пользователей
+@frontend_router.get("/users", response_class=HTMLResponse)
+async def serve_users(request: Request):
+    return templates.TemplateResponse("users.html", {"request": request})
 
 
-# # 🔥 Добавляем страницу детального просмотра пользователя
-# @frontend_router.get("/users/{user_id}", response_class=HTMLResponse)
-# async def serve_user_detail(request: Request, user_id: str):
-#     return templates.TemplateResponse("user_detail.html", {"request": request, "user_id": user_id})
+@frontend_router.get("/prompts", response_class=HTMLResponse)
+async def serve_prompts(request: Request):
+    return templates.TemplateResponse("prompt/manage_prompts.html", {"request": request})
+
+# 🔥 Добавляем страницу детального просмотра пользователя
+
+
+@frontend_router.get("/prompts/{prompt_id}", response_class=HTMLResponse)
+async def serve_prompt_detail(request: Request, prompt_id: str):
+    return templates.TemplateResponse("prompt/view_prompt.html", {"request": request, "prompt_id": prompt_id})

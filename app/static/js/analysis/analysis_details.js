@@ -7,21 +7,8 @@ $(document).ready(function () {
 
     if (!token) {
         window.location.href = '/';
-    } else {
-        $.ajax({
-            url: '/protected',
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function () {
-                loadAnalysisDetails(analysisId);
-            },
-            error: function () {
-                window.location.href = '/';
-            }
-        });
-    }
+    } 
+    loadAnalysisDetails(analysisId);
 
     function calculateCost(tokens, ratePer1000) {
         return ((tokens / 1000) * ratePer1000).toFixed(2);

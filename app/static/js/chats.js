@@ -7,28 +7,10 @@ $(document).ready(function () {
     if (!token) {
         console.warn('JWT токен отсутствует. Перенаправление на главную страницу.');
         window.location.href = '/';
-    } else {
-        console.log('Токен найден, проверяем его валидность...');
-        // Проверка валидности токена на сервере
-        $.ajax({
-            url: '/protected',
-            type: 'GET',
-            headers: {
-                Authorization: 'Bearer ' + token,
-            },
-            success: function (response) {
-                console.log('Токен валиден, пользователь:', response.logged_in_as);
-                console.log('Загружаем промпты и чаты...');
-                loadPrompts();
-                loadChats();
-            },
-            error: function (xhr, status, error) {
-                console.error('Ошибка проверки токена:', error);
-                console.warn('Перенаправляем на главную страницу...');
-                window.location.href = '/';
-            },
-        });
-    }
+    } 
+    
+    loadPrompts();
+    loadChats();
 
     function showError(message) {
         console.error('Ошибка:', message);

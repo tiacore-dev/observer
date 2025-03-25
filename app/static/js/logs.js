@@ -10,22 +10,9 @@ $(document).ready(function () {
     // Проверка токена
     if (!token) {
         window.location.href = '/';
-    } else {
-        $.ajax({
-            url: '/protected',
-            type: 'GET',
-            headers: {
-                Authorization: 'Bearer ' + token,
-            },
-            success: function (response) {
-                loadLogs(); // Загружаем логи после проверки токена
-            },
-            error: function (xhr, status, error) {
-                console.error('Ошибка проверки токена:', error);
-                window.location.href = '/';
-            },
-        });
-    }
+    } 
+    
+    loadLogs(); 
 
     $('#fetch-logs').on('click', function () {
         currentPage = 1; // Сбрасываем на первую страницу

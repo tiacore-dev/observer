@@ -52,7 +52,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(bearer
 
 
 def verify_token(token: str) -> str:
-    logger.info(f"Проверка токена: {token}")
+    # logger.info(f"Проверка токена: {token}")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -62,7 +62,7 @@ def verify_token(token: str) -> str:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
             )
-        logger.success(f"Токен валиден, username: {username}")
+        # logger.success(f"Токен валиден, username: {username}")
         return username
     except JWTError as exc:
         logger.error("Ошибка JWT-декодирования")
@@ -73,7 +73,7 @@ def verify_token(token: str) -> str:
 
 
 async def login_handler(username: str, password: str):
-    user = await AdminUser.filter(username=username).first()
+    user = await AdminUser.filter(username=username).prefetch_related("company").first()
 
     if not user:
         return None  # Возвращаем None, если пользователь не найден

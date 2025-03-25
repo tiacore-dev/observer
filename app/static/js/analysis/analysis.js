@@ -9,25 +9,12 @@ $(document).ready(function () {
 
     if (!token) {
         window.location.href = '/';
-    } else {
-        $.ajax({
-            url: '/protected',
-            type: 'GET',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-            success: function () {
-                loadPrompts().then(() => {
-                    checkAutomaticPrompt(); // Проверяем основной дефолтный промпт
-                });
-                loadChats();
-                loadUsers();
-            },
-            error: function () {
-                window.location.href = '/';
-            },
-        });
-    }
+    } 
+    loadPrompts().then(() => {
+        checkAutomaticPrompt(); // Проверяем основной дефолтный промпт
+    });
+    loadChats();
+    loadUsers();
 
     // Настройка диапазона дат
     $('#start_date').daterangepicker({

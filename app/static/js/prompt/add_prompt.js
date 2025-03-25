@@ -5,24 +5,7 @@ $(document).ready(function() {
     // Если токен отсутствует, перенаправляем на домашнюю страницу
     if (!token) {
         window.location.href = '/';
-    } else {
-        // Проверка валидности токена на сервере
-        $.ajax({
-            url: '/protected',  // Защищённый маршрут для проверки токена
-            type: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            },
-            success: function(response) {
-                console.log('Токен валидный, пользователь: ', response.logged_in_as);
-            },
-            error: function(xhr, status, error) {
-                console.error('Ошибка проверки токена:', error);
-                // Если токен недействителен, перенаправляем на домашнюю страницу
-                window.location.href = '/';
-            }
-        });
-    }
+    } 
 
     // Обработчик для кнопки "Назад"
     $('#backButton').on('click', function() {

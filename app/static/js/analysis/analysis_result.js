@@ -7,22 +7,9 @@ $(document).ready(function () {
 
     if (!token) {
         window.location.href = '/';
-    } else {
-        $.ajax({
-            url: '/protected',
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            success: function () {
-                loadAnalyses();
-            },
-            error: function () {
-                window.location.href = '/';
-            }
-        });
-    }
+    } 
 
+    loadAnalyses();
     function formatDate(timestamp) {
         if (!timestamp) {
             console.log("formatDate: timestamp отсутствует или null", timestamp);

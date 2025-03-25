@@ -100,7 +100,10 @@ $(document).ready(function() {
             success: function(response) {
                 saveTokens(response.access_token, response.refresh_token);
                 $('#loginAlert').html('<div class="alert alert-success">Login successful!</div>');
-                window.location.href = '/account';
+                
+                setTimeout(() => {
+                    window.location.href = '/account';
+                }, 300);  // Даем браузеру чуть-чуть времени записать токены
             },
             error: function(xhr) {
                 let errorMsg = 'An error occurred.';
