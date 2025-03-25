@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<div class="container mt-5">
+    <script src="/static/js/users.js"></script>
+    <h1>Управление пользователями</h1>
+    <div id="error" class="alert alert-danger" style="display: none;"></div>
+    <div>
+        <!-- Кнопка для обновления пользователей -->
+        <button id="updateUsersButton" class="btn btn-primary mb-3">Обновить пользователей</button>
+    </div>
+    <div id="content" style="display: none;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID пользователя</th>
+                    <th>TG account</th>
+                    <th>Имя пользователя</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="userTable"></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

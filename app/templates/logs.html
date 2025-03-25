@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script src="/static/js/logs.js"></script>
+
+<div class="container">
+    <h1>Логи</h1>
+    <div class="mb-3">
+        <div class="mb-3">
+            <label for="date" class="form-label mt-3">Дата:</label>
+            <input type="date" id="date" class="form-control">
+        
+            <button id="fetch-logs" class="btn btn-primary mt-3">Получить логи</button>
+        </div>
+        
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Уровень</th>
+                <th>Сообщение</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody id="logs-table-body">
+            <!-- Логи будут добавлены сюда -->
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between mt-3">
+    <button id="prev-page" class="btn btn-secondary" disabled>Предыдущая</button>
+    <span id="page-info">Страница 1</span>
+    <button id="next-page" class="btn btn-secondary">Следующая</button>
+</div>
+
+{% endblock %}

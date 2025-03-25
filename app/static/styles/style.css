@@ -1,0 +1,239 @@
+/* Основной стиль для тела документа */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9; /* Светлый фон для контраста */
+    margin: 0;
+    padding: 0; /* Убираем padding для body */
+    color: #000; /* Черный текст для удобочитаемости */
+}
+
+/* Контейнер для страницы */
+.d-flex {
+    display: flex; /* Flexbox для выравнивания меню и содержимого */
+}
+
+h1, h2 {
+    color: #333; /* Немного более мягкий черный, чем чистый #000 */
+}
+
+/* Для выравнивания заголовков с сайдбаром */
+h1, h2 {
+    margin-top: 0;  /* Убираем верхний отступ */
+    padding-top: 10px; /* Задаем отступ для выравнивания относительно сайдбара */
+    margin-bottom: 20px; /* Отступ снизу для удобства чтения */
+}
+
+.container {
+    padding-top: 20px; /* Общий отступ сверху для всего содержимого */
+}
+
+/* Стили для навигационного меню */
+.navbar {
+    padding: 10px; /* Увеличиваем отступы для навбара */
+    position: fixed; /* Устанавливаем относительное положение */
+    z-index: 1050; /* Повышаем z-index, чтобы навбар был выше сайдбара */
+}
+
+.navbar-brand, .nav-link {
+    color: #ffffff; /* Белый цвет текста в навбаре */
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Подсветка при наведении */
+}
+
+/* Стили для бокового меню */
+.sidebar {
+    background-color: #e9ecef; /* Светло-серый фон для улучшения контраста */
+    border-right: 2px solid #ccc;
+    width: 200px; /* Фиксированная ширина */
+    position: fixed; /* Зафиксируем боковую панель */
+    top: 58; /* Убираем жесткое значение, устанавливается через JS */
+    left: 0;
+    padding-bottom: 20px; /* Небольшой отступ снизу */
+    height: calc(100% - 58px); /* Можно оставить для других элементов */
+    overflow-y: auto; /* Прокрутка, если элементов слишком много */
+}
+
+
+/* Контент-область с учетом боковой панели */
+#main-content {
+    flex-grow: 1;
+    margin-left: 220px; /* Учитываем ширину боковой панели */
+    padding: 20px; /* Отступ для удобства чтения содержимого */
+}
+
+/* Список внутри сайдбара */
+.sidebar ul {
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar .list-group-item {
+    border: none; /* Убираем границы у элементов списка */
+    padding: 10px 15px; /* Увеличенные отступы */
+}
+
+/* Кнопки в сайдбаре */
+.sidebar .list-group-item-action {
+    color: #0056b3; /* Темно-синий цвет текста */
+    background-color: transparent; /* Прозрачный фон для элементов */
+}
+
+.sidebar .list-group-item-action:hover {
+    background-color: rgba(0, 86, 179, 0.1); /* Светлый фон при наведении */
+}
+
+/* Для мобильных экранов, когда сайдбар скрыт */
+.sidebar-hidden #main-content {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Таблицы */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0; /* Отступ сверху и снизу */
+}
+
+
+tr:nth-child(even) {
+    background-color: transparent; /* Устанавливаем фон для четных строк */
+}
+
+tr:nth-child(odd) {
+    background-color: transparent; /* Устанавливаем фон для нечетных строк */
+}
+
+
+th, td {
+    border: 1px solid #ddd; /* Легкая граница для ячеек */
+    padding: 12px; /* Увеличенные отступы внутри ячеек */
+}
+
+th {
+    background-color: #e9ecef; /* Светло-серый фон для заголовков таблицы */
+}
+
+/* Кнопки */
+.btn {
+    background-color: #0056b3; /* Темно-синий фон кнопок */
+    color: #ffffff; /* Белый цвет текста на кнопках */
+}
+
+.btn:hover {
+    background-color: #004494; /* Более темный синий цвет при наведении */
+}
+
+.btn-danger {
+    background-color: #dc3545; /* Красный фон для кнопок типа btn-danger */
+    color: #ffffff; /* Белый текст на кнопках */
+}
+
+.btn-danger:hover {
+    background-color: #c82333; /* Более темный красный при наведении */
+}
+
+/* Стиль для форм и спиннеров */
+.form-label {
+    font-weight: bold; /* Жирный шрифт для меток формы */
+}
+
+.mt-3 {
+    margin-top: 1rem; /* Отступ сверху */
+}
+
+/* Стиль спиннера */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);  /* Легкая полупрозрачная граница */
+    border-radius: 50%;                    /* Закругленные края (круг) */
+    border-top: 4px solid #000;             /* Верхняя часть круга будет темнее */
+    width: 30px;                            /* Ширина спиннера */
+    height: 30px;                           /* Высота спиннера */
+    animation: spin 1s linear infinite;      /* Анимация вращения */
+}
+
+/* Анимация вращения */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Подсветка строки при наведении и кликабельность */
+.clickable-row {
+    cursor: pointer; /* Изменяем курсор на указатель для строк */
+    position: relative; /* Установите относительное позиционирование */
+    z-index: 1; /* Увеличьте z-index, чтобы строка была выше */
+}
+
+.clickable-row:hover {
+    background-color: #5472e2b3; /* Цвет фона при наведении */
+}
+
+
+/* Дропдаун для действий */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block; /* Показывать меню при наведении */
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f1f1; /* Цвет фона для элемента меню при наведении */
+}
+
+
+#prompt_name, #audio_file_name {
+    width: 100%;
+    max-width: 500px; /* Установите максимальную ширину */
+    margin-bottom: 10px;
+}
+
+
+/* static/css/status.css */
+
+.task-status {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.task-status h3 {
+    margin: 0 0 10px 0;
+}
+
+.task-status p {
+    margin: 5px 0;
+}
+
+.file-input-group {
+    margin-bottom: 15px; /* Отступ между группами полей */
+}
+
+.file-input-group .remove-file-btn {
+    margin-top: 10px; /* Отступ сверху для кнопки удаления */
+}
+
+.logo-img {
+    height: 40px; /* Размер лого */
+    width: auto;
+    border-radius: 5px; /* Скругление углов, если нужно */
+}

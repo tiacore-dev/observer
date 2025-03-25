@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center mt-5">Личный кабинет</h2>
+    <script src="/static/js/account.js"></script> 
+    <!-- Отображение имени пользователя и баланса -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <h4>Имя пользователя: <strong id="username">Загрузка...</strong></h4>
+        <!--<h4>Баланс: <strong>1000</strong> (в условных единицах)</h4>-->
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+services:
+  aerich:
+    build: .
+    command: ["/bin/sh", "-c", "aerich init -t database.config.TORTOISE_ORM && aerich upgrade"]
+    volumes:
+      - .:/app
+    networks:
+      - task_bot_network
+
+  tg-app:
+    build: .
+    container_name: tg-app
+    ports:
+      - "8000:8000"
+    networks:
+      - task_bot_network
+
+
+networks:
+  task_bot_network:
+    driver: bridge
