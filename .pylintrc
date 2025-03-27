@@ -12,7 +12,8 @@ disable=logging-format-interpolation,
         logging-fstring-interpolation,
         import-outside-toplevel,
         broad-exception-caught,
-        unused-argument
+        unused-argument,
+        redefined-outer-name
 
 [FORMAT]
 # Настройки форматирования кода

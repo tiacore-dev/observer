@@ -5,7 +5,7 @@ from app.handlers.auth_handlers import login_handler, create_refresh_token, crea
 from app.handlers.auth_handlers import SECRET_KEY, ALGORITHM, get_current_user
 from app.pydantic_models.auth_schemas import TokenResponse, LoginRequest
 
-auth_router = APIRouter(prefix="/auth", tags=["Auth"])
+auth_router = APIRouter()
 
 
 @auth_router.get("/protected", summary="Пример защищённого эндпоинта")

@@ -33,7 +33,14 @@ def create_refresh_token(data: dict):
     return create_access_token(data, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)) -> str:
+async def get_current_admin(username: str) -> AdminUser:
+    user = await AdminUser.filter(username=username).prefetch_related("company").first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)) -> str:
     """
     Проверяет токен из заголовка Authorization и возвращает имя пользователя.
     """
@@ -48,7 +55,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(bearer
     token = credentials.credentials
     logger.info(f"🔍 Проверяем токен: {token}")
 
-    return verify_token(token)
+    username = verify_token(token)
+    admin = await get_current_admin(username)
+    return admin
 
 
 def verify_token(token: str) -> str:

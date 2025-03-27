@@ -3,7 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 
-frontend_router = APIRouter(tags=["frontend"])
+frontend_router = APIRouter()
 
 templates = Jinja2Templates(directory="app/templates")
 

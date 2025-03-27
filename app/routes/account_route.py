@@ -4,7 +4,7 @@ from app.handlers.auth_handlers import get_current_user
 # или только AdminUser, если ты хочешь только для админов
 from app.database.models import AdminUser
 
-account_router = APIRouter(prefix="/api/accounts")
+account_router = APIRouter()
 
 
 @account_router.get("/info")
