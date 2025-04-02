@@ -5,7 +5,13 @@ from tortoise.expressions import Q
 from app.handlers.auth_handlers import get_current_user
 from app.database.models import Prompt, AdminUser
 from app.pydantic_models.prompt_schemas import (
-    PromptCreateSchema, PromptEditSchema, prompt_filter_params, PromptResponseSchema, PromptListResponseSchema, PromptSchema
+    PromptCreateSchema,
+    PromptEditSchema,
+    prompt_filter_params,
+    PromptResponseSchema,
+    PromptListResponseSchema,
+    PromptSchema,
+    PromptAutomaticSchema
 )
 
 
@@ -78,11 +84,7 @@ async def delete_prompt(
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
 
 
-@prompt_router.get(
-    "/all",
-    response_model=PromptListResponseSchema,
-    summary="Получение списка промптов с фильтрацией"
-)
+@prompt_router.get("/all", response_model=PromptListResponseSchema, summary="Получение списка промптов с фильтрацией")
 async def get_prompts(
     filters: dict = Depends(prompt_filter_params),
     admin: AdminUser = Depends(get_current_user)
@@ -129,6 +131,43 @@ async def get_prompts(
 
     except Exception as e:
         logger.exception("Ошибка при получении списка промптов")
+        raise HTTPException(status_code=500, detail="Ошибка сервера") from e
+
+
+async def set_automatic(
+    prompt_id: UUID = Path(..., title="ID промпта",
+                           description="ID изменяемого промпта"),
+    data: PromptAutomaticSchema = Body(...),
+    admin: AdminUser = Depends(get_current_user)
+):
+    use_automatic = data.use_automatic
+
+    logger.info(
+        f"Запрос на изменение флага 'use_automatic' для промпта {prompt_id}: {use_automatic}")
+
+    if use_automatic is None:
+        raise HTTPException(
+            status_code=400, detail="Поле use_automatic обязательно")
+
+    try:
+        # Сброс флага у всех промптов компании
+        if use_automatic:
+            logger.info(
+                f"Сброс флага 'use_automatic' у всех промптов компании {admin.company_id}")
+            await Prompt.filter(company=admin.company).update(use_automatic=False)
+
+        # Установка нового значения флага для выбранного промпта
+        updated_rows = await Prompt.filter(prompt_id=prompt_id, company=admin.company).update(use_automatic=use_automatic)
+
+        if not updated_rows:
+            logger.warning(f"Промпт {prompt_id} не найден")
+            raise HTTPException(status_code=404, detail="Промпт не найден")
+
+        logger.success(
+            f"Флаг 'use_automatic' у промпта {prompt_id} успешно обновлён на {use_automatic}")
+
+    except Exception as e:
+        logger.exception("Ошибка при обновлении флага use_automatic")
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
 
 

@@ -37,6 +37,10 @@ class PromptListResponseSchema(BaseModel):
     prompts: List[PromptSchema]
 
 
+class PromptAutomaticSchema(BaseModel):
+    use_automatic: bool = Field(...)
+
+
 def prompt_filter_params(
     search: Optional[str] = Query(
         None, description="Фильтр по названию промпта"),

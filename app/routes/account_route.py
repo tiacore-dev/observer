@@ -8,9 +8,9 @@ account_router = APIRouter()
 
 
 @account_router.get("/info")
-async def get_account_info(username: str = Depends(get_current_user)):
-    user = await AdminUser.filter(username=username).prefetch_related("company").first()
+async def get_account_info(admin: AdminUser = Depends(get_current_user)):
+
     return {
-        "username": user.username,
-        "company_name": user.company.company_name,
+        "username": admin.username,
+        "company_name": admin.company.company_name,
     }

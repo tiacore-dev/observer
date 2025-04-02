@@ -85,7 +85,7 @@ class Chat(Model):
     chat_id = fields.BigIntField(pk=True)
     chat_name = fields.CharField(max_length=255, null=True)
     default_prompt = fields.ForeignKeyField(
-        "models.Prompt", related_name="chats")
+        "models.Prompt", related_name="chats", null=True)
     created_at = fields.BigIntField(default=lambda: int(time()))
     company = fields.ForeignKeyField("models.Company", related_name="chats")
 
@@ -97,6 +97,10 @@ class ChatSchedule(Model):
     schedule_id = fields.IntField(pk=True)
 
     chat = fields.ForeignKeyField("models.Chat", related_name="schedules")
+    prompt = fields.ForeignKeyField(
+        "models.Prompt",
+        related_name="schedules"
+    )
 
     # 'interval', 'daily_time', 'cron', 'once'
     schedule_type = fields.CharField(max_length=20)
@@ -116,7 +120,7 @@ class ChatSchedule(Model):
     run_at = fields.DatetimeField(null=True)
 
     # Общие поля:
-    enabled = fields.BooleanField(default=True)
+    enabled = fields.BooleanField(default=False)
     last_run_at = fields.DatetimeField(null=True)
 
     created_at = fields.BigIntField(default=lambda: int(time()))

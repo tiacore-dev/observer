@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 # from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 from logger import setup_logger
 from app.routes import register_routes
@@ -31,9 +30,5 @@ def create_app() -> FastAPI:
     setup_logger()
     # Регистрация маршрутов
     register_routes(app)
-
-    # Раздача статических файлов
-    static_dir = os.path.join(os.path.dirname(__file__), "static")
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     return app

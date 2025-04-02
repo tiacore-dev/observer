@@ -28,8 +28,10 @@ class UserRole(Model):
 class AdminUser(Model):
     admin_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     username = fields.CharField(max_length=50, unique=True)
-    role = fields.ForeignKeyField("diff_models.UserRole", related_name="admins")
-    company = fields.ForeignKeyField("diff_models.Company", related_name="admins")
+    role = fields.ForeignKeyField(
+        "diff_models.UserRole", related_name="admins")
+    company = fields.ForeignKeyField(
+        "diff_models.Company", related_name="admins")
     password_hash = fields.CharField(max_length=255)
     created_at = fields.BigIntField(default=lambda: int(time()))
 
@@ -61,7 +63,8 @@ class User(Model):
     username = fields.CharField(max_length=255, null=True)
     account_name = fields.CharField(max_length=255, null=True)
     role = fields.ForeignKeyField("diff_models.UserRole", related_name="users")
-    company = fields.ForeignKeyField("diff_models.Company", related_name="users")
+    company = fields.ForeignKeyField(
+        "diff_models.Company", related_name="users")
     created_at = fields.BigIntField(default=lambda: int(time()))
 
     class Meta:
@@ -87,7 +90,8 @@ class Chat(Model):
     default_prompt = fields.ForeignKeyField(
         "diff_models.Prompt", related_name="chats")
     created_at = fields.BigIntField(default=lambda: int(time()))
-    company = fields.ForeignKeyField("diff_models.Company", related_name="chats")
+    company = fields.ForeignKeyField(
+        "diff_models.Company", related_name="chats")
 
     class Meta:
         table = "chats"
@@ -97,6 +101,10 @@ class ChatSchedule(Model):
     schedule_id = fields.IntField(pk=True)
 
     chat = fields.ForeignKeyField("diff_models.Chat", related_name="schedules")
+    prompt = fields.ForeignKeyField(
+        "diff_models.Prompt",
+        related_name="schedules"
+    )
 
     # 'interval', 'daily_time', 'cron', 'once'
     schedule_type = fields.CharField(max_length=20)
@@ -131,7 +139,8 @@ class BotInfo(Model):
     bot_name = fields.CharField(max_length=255)
     target_chat_id = fields.ForeignKeyField(
         "diff_models.Chat", related_name="bot", null=True)
-    company = fields.ForeignKeyField("diff_models.Company", related_name="bots")
+    company = fields.ForeignKeyField(
+        "diff_models.Company", related_name="bots")
     is_active = fields.BooleanField(default=True)
     created_at = fields.BigIntField(default=lambda: int(time()))
 
@@ -143,14 +152,16 @@ class AnalysisResult(Model):
 
     analysis_id = fields.UUIDField(pk=True, default=uuid.uuid4)
 
-    prompt = fields.ForeignKeyField("diff_models.Prompt", related_name="analysis")
+    prompt = fields.ForeignKeyField(
+        "diff_models.Prompt", related_name="analysis")
     result_text = fields.TextField()
     schedule = fields.ForeignKeyField(
         "diff_models.ChatSchedule",
         related_name="analysis_results",
         null=True
     )
-    company = fields.ForeignKeyField("diff_models.Company", related_name="analysis")
+    company = fields.ForeignKeyField(
+        "diff_models.Company", related_name="analysis")
     created_at = fields.BigIntField(default=lambda: int(time()))
 
     # Разворачиваем фильтры:
@@ -188,13 +199,13 @@ class Prompt(Model):
     prompt_name = fields.CharField(max_length=255)
     text = fields.TextField()
     use_automatic = fields.BooleanField(null=True, default=False)
-    company = fields.ForeignKeyField("diff_models.Company", related_name="prompts")
+    company = fields.ForeignKeyField(
+        "diff_models.Company", related_name="prompts")
     created_at = fields.BigIntField(default=lambda: int(time()))
 
     class Meta:
         table = "prompts"
 
-from tortoise import Model, fields
 
 MAX_VERSION_LENGTH = 255
 
@@ -205,4 +216,3 @@ class Aerich(Model):
 
     class Meta:
         ordering = ["-id"]
-
