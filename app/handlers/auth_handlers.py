@@ -4,7 +4,7 @@ from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials
 from loguru import logger
 from config import Settings
-from app.database.models import AdminUser
+from app.database.models import Users
 from app.auth_schemas import bearer_scheme
 
 # Конфигурация JWT
@@ -33,8 +33,8 @@ def create_refresh_token(data: dict):
     return create_access_token(data, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
 
 
-async def get_current_admin(username: str) -> AdminUser:
-    user = await AdminUser.filter(username=username).prefetch_related("company").first()
+async def get_current_admin(username: str) -> Users:
+    user = await Users.filter(username=username).prefetch_related("company").first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
@@ -82,7 +82,7 @@ def verify_token(token: str) -> str:
 
 
 async def login_handler(username: str, password: str):
-    user = await AdminUser.filter(username=username).prefetch_related("company").first()
+    user = await Users.filter(username=username).prefetch_related("company").first()
 
     if not user:
         return None  # Возвращаем None, если пользователь не найден

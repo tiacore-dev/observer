@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Path, HTTPException, Body, status
 from loguru import logger
 from tortoise.expressions import Q
 from app.handlers.auth_handlers import get_current_user
-from app.database.models import Prompt, AdminUser
+from app.database.models import Prompts, Users
 from app.pydantic_models.prompt_schemas import (
     PromptCreateSchema,
     PromptEditSchema,
@@ -19,10 +19,10 @@ prompt_router = APIRouter()
 
 
 @prompt_router.post("/add", response_model=PromptResponseSchema, summary="Добавление новой промпта", status_code=status.HTTP_201_CREATED)
-async def add_prompt(data: PromptCreateSchema = Body(...), admin: AdminUser = Depends(get_current_user)):
+async def add_prompt(data: PromptCreateSchema = Body(...), admin: Users = Depends(get_current_user)):
     logger.info(f"Создание промпта: {data.dict()}")
     try:
-        prompt = await Prompt.create(
+        prompt = await Prompts.create(
             prompt_name=data.prompt_name,
             text=data.text,
             company=admin.company
@@ -45,14 +45,14 @@ async def edit_prompt(
         prompt_id: UUID = Path(..., title="ID промпта",
                                description="ID изменяемой промпта"),
         data: PromptEditSchema = Body(...),
-        admin: AdminUser = Depends(get_current_user)):
+        admin: Users = Depends(get_current_user)):
     """
     Обновление промпта по ID, переданному в URL.
     """
     logger.info(
         f"Обновление промпта {prompt_id}: {data.dict(exclude_unset=True)}")
     try:
-        updated_rows = await Prompt.filter(prompt_id=prompt_id).update(**data.dict(exclude_unset=True))
+        updated_rows = await Prompts.filter(prompt_id=prompt_id).update(**data.dict(exclude_unset=True))
 
         if not updated_rows:
             logger.warning(f"промпта {prompt_id} не найдена")
@@ -69,10 +69,10 @@ async def edit_prompt(
 async def delete_prompt(
         prompt_id: UUID = Path(..., title="ID промпта",
                                description="ID удаляемой промпта"),
-        admin: AdminUser = Depends(get_current_user)):
+        admin: Users = Depends(get_current_user)):
     logger.info(f"Удаление промпта {prompt_id}")
     try:
-        deleted_count = await Prompt.filter(prompt_id=prompt_id).delete()
+        deleted_count = await Prompts.filter(prompt_id=prompt_id).delete()
         if not deleted_count:
             logger.warning(f"промпта {prompt_id} не найдена")
             raise HTTPException(status_code=404, detail="промпта не найдена")
@@ -87,7 +87,7 @@ async def delete_prompt(
 @prompt_router.get("/all", response_model=PromptListResponseSchema, summary="Получение списка промптов с фильтрацией")
 async def get_prompts(
     filters: dict = Depends(prompt_filter_params),
-    admin: AdminUser = Depends(get_current_user)
+    admin: Users = Depends(get_current_user)
 ):
     logger.info(f"Запрос на список промптов: {filters}")
 
@@ -101,9 +101,9 @@ async def get_prompts(
         page = filters.get("page", 1)
         page_size = filters.get("page_size", 10)
 
-        total_count = await Prompt.filter(query).count()
+        total_count = await Prompts.filter(query).count()
 
-        prompts = await Prompt.filter(query).order_by(order_by).offset(
+        prompts = await Prompts.filter(query).order_by(order_by).offset(
             (page - 1) * page_size
         ).limit(page_size).values(
             "prompt_id",
@@ -138,7 +138,7 @@ async def set_automatic(
     prompt_id: UUID = Path(..., title="ID промпта",
                            description="ID изменяемого промпта"),
     data: PromptAutomaticSchema = Body(...),
-    admin: AdminUser = Depends(get_current_user)
+    admin: Users = Depends(get_current_user)
 ):
     use_automatic = data.use_automatic
 
@@ -154,10 +154,10 @@ async def set_automatic(
         if use_automatic:
             logger.info(
                 f"Сброс флага 'use_automatic' у всех промптов компании {admin.company_id}")
-            await Prompt.filter(company=admin.company).update(use_automatic=False)
+            await Prompts.filter(company=admin.company).update(use_automatic=False)
 
         # Установка нового значения флага для выбранного промпта
-        updated_rows = await Prompt.filter(prompt_id=prompt_id, company=admin.company).update(use_automatic=use_automatic)
+        updated_rows = await Prompts.filter(prompt_id=prompt_id, company=admin.company).update(use_automatic=use_automatic)
 
         if not updated_rows:
             logger.warning(f"Промпт {prompt_id} не найден")
@@ -175,11 +175,11 @@ async def set_automatic(
 async def get_prompt(
     prompt_id: UUID = Path(..., title="ID промпта",
                            description="ID просматриваемого промпта"),
-    admin: AdminUser = Depends(get_current_user)
+    admin: Users = Depends(get_current_user)
 ):
     logger.info(f"Запрос на просмотр промпта: {prompt_id}")
     try:
-        prompt = await Prompt.filter(prompt_id=prompt_id, company=admin.company).first().values(
+        prompt = await Prompts.filter(prompt_id=prompt_id, company=admin.company).first().values(
             "prompt_id",
             "prompt_name",
             "text",

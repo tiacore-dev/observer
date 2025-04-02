@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from config import Settings  # конфиг с URL
 # твоя логика обработки апдейтов
 from app.handlers.telegram_handlers import process_update
-from app.database.models import BotInfo
+from app.database.models import Bots
 
 
 bot_router = APIRouter(prefix="/api/bots")
@@ -30,7 +30,7 @@ async def register_bot(data: RegisterBotRequest):
     return {"message": "Bot registered and webhook set", "bot_id": bot.bot_id}
 
 
-async def validate_token_and_register(token: str) -> BotInfo:
+async def validate_token_and_register(token: str) -> Bots:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://api.telegram.org/bot{token}/getMe") as resp:
             data = await resp.json()
@@ -43,7 +43,7 @@ async def validate_token_and_register(token: str) -> BotInfo:
 
     secret = secrets.token_hex(16)  # для валидации входящих запросов
 
-    bot = await BotInfo.create(
+    bot = await Bots.create(
         bot_id=bot_id,
         name=username,
         token=token,
@@ -53,7 +53,7 @@ async def validate_token_and_register(token: str) -> BotInfo:
     return bot
 
 
-async def set_webhook(bot: BotInfo):
+async def set_webhook(bot: Bots):
     url = f"https://api.telegram.org/bot{bot.token}/setWebhook"
     payload = {
         "url": f"{settings.WEBHOOK_BASE_URL}/webhook",
@@ -68,7 +68,7 @@ async def telegram_webhook(request: Request, x_telegram_bot_api_secret_token: st
     if not x_telegram_bot_api_secret_token:
         raise HTTPException(status_code=403, detail="Missing secret token")
 
-    bot = await BotInfo.get_or_none(secret_token=x_telegram_bot_api_secret_token)
+    bot = await Bots.get_or_none(secret_token=x_telegram_bot_api_secret_token)
     if not bot:
         raise HTTPException(status_code=403, detail="Unknown bot")
 

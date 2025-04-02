@@ -23,7 +23,7 @@ class Settings:
     JWT_SECRET = os.getenv('JWT_SECRET')
     ENDPOINT_URL = os.getenv('ENDPOINT_URL')
     REGION_NAME = os.getenv('REGION_NAME')
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID ')
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     BUCKET_NAME = os.getenv('BUCKET_NAME')
     WEBHOOK_BASE_URL = os.getenv('WEBHOOK_BASE_URL')

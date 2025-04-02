@@ -13,9 +13,9 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - task_bot_network
+      - observer_network
 
 
 networks:
-  task_bot_network:
+  observer_network:
     driver: bridge

@@ -6,7 +6,7 @@ from app.database.models import AdminUser, UserRole, Company
 load_dotenv()
 
 # Порт и биндинг
-PORT = os.getenv('ADMIN_PORT', "8001")
+PORT = 8000
 
 # 📌 Автоматическое создание супер-админа
 
