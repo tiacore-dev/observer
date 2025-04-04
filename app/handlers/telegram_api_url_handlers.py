@@ -65,10 +65,11 @@ async def get_file(bot_token: str, file_id: str):
     url_get_path = f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}"
     async with aiohttp.ClientSession() as session:
         data = await fetch_json(session, "GET", url_get_path)
+        logger.debug(f"Ответ от телеграм по файлу: {data}")
         if "result" not in data or "file_path" not in data["result"]:
             logger.warning(f"📦 Telegram не прислал путь к файлу: {data}")
             return None
         file_path = data['result']['file_path']
-        url_get_bytes = f"https://api.telegram.org/bot{bot_token}/{file_path}"
+        url_get_bytes = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
         file_bytes = await fetch_bytes(session, "GET", url_get_bytes)
-        return file_bytes
+        return file_bytes, file_path

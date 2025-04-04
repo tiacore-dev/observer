@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 import aioboto3
 from botocore.exceptions import ClientError
 from config import Settings
@@ -17,11 +17,11 @@ class AsyncS3Manager:
     def _get_session(self):
         return aioboto3.Session()
 
-    def _build_path(self, telegram_id: int, filename: str) -> str:
-        return f"{self.bucket_folder}/{telegram_id}/{filename}"
+    def _build_path(self, chat_id: int, filename: str) -> str:
+        return f"{self.bucket_folder}/{chat_id}/{filename}"
 
-    async def upload_bytes(self, file_bytes: bytes, telegram_id: int, filename: str):
-        key = self._build_path(telegram_id, filename)
+    async def upload_bytes(self, file_bytes: bytes, chat_id: int, filename: str):
+        key = self._build_path(chat_id, filename)
         session = self._get_session()
         async with session.client(
             "s3",
@@ -37,14 +37,13 @@ class AsyncS3Manager:
                     Body=file_bytes,
                     ACL="private"
                 )
-                logging.info(f"✅ Файл загружен: {key}")
+                logger.info(f"✅ Файл загружен: {key}")
                 return key
             except ClientError as e:
-                logging.error(f"Ошибка загрузки: {e}")
+                logger.error(f"Ошибка загрузки: {e}")
                 raise
 
-    async def generate_presigned_url(self, telegram_id: int, filename: str, expiration=3600):
-        key = self._build_path(telegram_id, filename)
+    async def generate_presigned_url(self, key, expiration=3600):
         session = self._get_session()
         async with session.client(
             "s3",
@@ -60,11 +59,11 @@ class AsyncS3Manager:
                     ExpiresIn=expiration
                 )
             except ClientError as e:
-                logging.error(f"Ошибка при генерации ссылки: {e}")
+                logger.error(f"Ошибка при генерации ссылки: {e}")
                 return None
 
-    async def list_user_files(self, telegram_id: int) -> list[str]:
-        prefix = f"{self.bucket_folder}/{telegram_id}/"
+    async def list_chat_files(self, chat_id: int) -> list[str]:
+        prefix = f"{self.bucket_folder}/{chat_id}/"
         session = self._get_session()
         async with session.client(
             "s3",
@@ -80,5 +79,5 @@ class AsyncS3Manager:
                 )
                 return [obj["Key"] for obj in response.get("Contents", [])]
             except ClientError as e:
-                logging.error(f"Ошибка при получении списка файлов: {e}")
+                logger.error(f"Ошибка при получении списка файлов: {e}")
                 return []
