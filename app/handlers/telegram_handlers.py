@@ -62,13 +62,20 @@ async def put_file_to_s3(message, bot, chat_id):
     file_bytes = None
     file_name = None
     s3_key = None
+    file_id = None
     if message.get('photo'):
         smallest_photo = min(
             message["photo"], key=lambda p: p["file_size"])
         file_id = smallest_photo["file_id"]
-        file_bytes, file_path = await get_file(bot.bot_token, file_id)
-        file_name = file_path.split('/')[-1]
 
+    if message.get('document'):
+        file_id = message['document']['file_id']
+        file_name = message['document']['file_name']
+
+    if file_id:
+        file_bytes, file_path = await get_file(bot.bot_token, file_id)
+        if not file_name:
+            file_name = file_path.split('/')[-1]
     if file_bytes and file_name:
         manager = AsyncS3Manager()
         s3_key = await manager.upload_bytes(file_bytes, chat_id, file_name)
