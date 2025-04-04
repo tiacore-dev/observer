@@ -2,9 +2,10 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials
+from tortoise.queryset import Prefetch
 from loguru import logger
 from config import Settings
-from app.database.models import Users
+from app.database.models import Users, UserCompanyRelations
 from app.auth_schemas import bearer_scheme
 
 # Конфигурация JWT
@@ -23,7 +24,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    logger.info(f"Created Access JWT: {encoded_jwt}")
+    # logger.info(f"Created Access JWT: {encoded_jwt}")
     return encoded_jwt
 
 # Проверка токена
@@ -34,7 +35,10 @@ def create_refresh_token(data: dict):
 
 
 async def get_current_admin(username: str) -> Users:
-    user = await Users.filter(username=username).prefetch_related("company").first()
+    user = await Users.filter(username=username).prefetch_related(
+        Prefetch("user_relations", queryset=UserCompanyRelations.all(
+        ).prefetch_related("company"))
+    ).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
@@ -53,11 +57,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
         raise HTTPException(status_code=401, detail="Empty token")
 
     token = credentials.credentials
-    logger.info(f"🔍 Проверяем токен: {token}")
+    logger.debug(f"🔍 Проверяем токен: {token}")
 
     username = verify_token(token)
-    admin = await get_current_admin(username)
-    return admin
+    user = await get_current_admin(username)
+    return user
 
 
 def verify_token(token: str) -> str:
@@ -82,7 +86,7 @@ def verify_token(token: str) -> str:
 
 
 async def login_handler(username: str, password: str):
-    user = await Users.filter(username=username).prefetch_related("company").first()
+    user = await Users.filter(username=username).first()
 
     if not user:
         return None  # Возвращаем None, если пользователь не найден

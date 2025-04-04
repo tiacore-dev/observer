@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from app import create_app
-from app.database.models import AdminUser, UserRole, Company
+from app.database.models import Users, UserRoles, Companies, UserCompanyRelations
 
 load_dotenv()
 
@@ -16,20 +16,25 @@ app = create_app()
 
 async def create_admin():
     try:
-        role = await UserRole.create(role_id="admin", role_name="Администратор")
-        company = await Company.create(company_name="Tiacore")
+        user = await Users.get_or_none(username="admin")
+        if user:
+            return
+        role = await UserRoles.create(role_name="Администратор")
+        company = await Companies.create(company_name="Tiacore")
 
         password = os.getenv('PASSWORD')
         if not password:
             raise ValueError("PASSWORD not set in environment variables.")
 
-        admin = await AdminUser.create_admin(
+        user = await Users.create_user(
             username="admin",
-            role=role,
-            company=company,
             password=password,
         )
-        print(f"✅ Admin {admin.username} created successfully.")
+        print(f"✅ Admin {user.username} created successfully.")
+        await UserCompanyRelations.create(
+            role=role, company=company, user=user)
+
+        print("✅ Relation created successfully.")
 
     except Exception as e:
         print("❌ Error during admin creation:", e)

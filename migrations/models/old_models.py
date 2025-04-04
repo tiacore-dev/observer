@@ -33,7 +33,7 @@ class Permissions(Model):
 
 
 class Companies(Model):
-    company_id = fields.CharField(max_length=255)
+    company_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     company_name = fields.CharField(max_length=255)
     description = fields.TextField(null=True)
 
@@ -130,10 +130,7 @@ class Chats(Model):
     # Уникальный идентификатор чата
     chat_id = fields.BigIntField(pk=True)
     chat_name = fields.CharField(max_length=255, null=True)
-    default_prompt = fields.ForeignKeyField(
-        "diff_models.Prompts", related_name="chats", null=True)
     created_at = fields.DatetimeField(auto_now_add=True)
-    company = fields.ForeignKeyField("diff_models.Companies", related_name="chats")
 
     @property
     def created_at_ts(self):
@@ -149,9 +146,12 @@ class Chats(Model):
 class Bots(Model):
     bot_id = fields.BigIntField(pk=True)
     bot_token = fields.CharField(max_length=255)
-    bot_name = fields.CharField(max_length=255)
-    company = fields.ForeignKeyField("diff_models.Companies", related_name="bots")
-    is_active = fields.BooleanField(default=True)
+    secret_token = fields.CharField(max_length=255)
+    bot_username = fields.CharField(max_length=255)
+    bot_first_name = fields.CharField(max_length=255)
+    company = fields.ForeignKeyField(
+        "diff_models.Companies", related_name="bots")
+    is_active = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     @property
@@ -159,7 +159,7 @@ class Bots(Model):
         return int(self.created_at.timestamp())
 
     def __repr__(self):
-        return f"<Bots(bot_id={self.bot_id}, name='{self.bot_name}', active={self.is_active})>"
+        return f"<Bots(bot_id={self.bot_id}, name='{self.bot_username}', active={self.is_active})>"
 
     class Meta:
         table = "bots"
@@ -167,8 +167,10 @@ class Bots(Model):
 
 class BotChatRelations(Model):
     bot_chat_relation_id = fields.UUIDField(pk=True, default=uuid.uuid4)
-    bot = fields.ForeignKeyField("diff_models.Bots", related_name="bot_relations")
-    chat = fields.ForeignKeyField("diff_models.Chats", related_name="bot_relations")
+    bot = fields.ForeignKeyField(
+        "diff_models.Bots", related_name="bot_relations")
+    chat = fields.ForeignKeyField(
+        "diff_models.Chats", related_name="bot_relations")
     is_admin = fields.BooleanField(default=False)
 
     def __repr__(self):
@@ -178,9 +180,9 @@ class BotChatRelations(Model):
         table = "bot_chat_relations"
 
 
-class Message(Model):
+class Messages(Model):
 
-    message_id = fields.UUIDField(pk=True, default=uuid.uuid4)
+    message_id = fields.CharField(pk=True, max_length=255)
     timestamp = fields.DatetimeField(auto_now_add=True)
     account = fields.ForeignKeyField(
         "diff_models.Accounts", related_name="messages")
@@ -194,7 +196,7 @@ class Message(Model):
         return int(self.timestamp.timestamp())
 
     def __repr__(self):
-        return f"<Message(message_id={self.message_id}, chat={self.chat.chat_id}, account={self.account.account_id})>"
+        return f"<Messages(message_id={self.message_id}, chat={self.chat.chat_id}, account={self.account.account_id})>"
 
     class Meta:
         table = "messages"
@@ -203,7 +205,8 @@ class Message(Model):
 class ChatSchedules(Model):
     schedule_id = fields.IntField(pk=True)
 
-    chat = fields.ForeignKeyField("diff_models.Chats", related_name="schedules")
+    chat = fields.ForeignKeyField(
+        "diff_models.Chats", related_name="schedules")
     prompt = fields.ForeignKeyField(
         "diff_models.Prompts",
         related_name="schedules"
@@ -251,7 +254,8 @@ class TargetChats(Model):
     target_chat_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     schedule = fields.ForeignKeyField(
         "diff_models.ChatSchedules", related_name="target_chats")
-    chat = fields.ForeignKeyField("diff_models.Chats", related_name="target_chats")
+    chat = fields.ForeignKeyField(
+        "diff_models.Chats", related_name="target_chats")
 
     def __repr__(self):
         return f"<TargetChats(target_chat_id={self.target_chat_id}, chat={self.chat.chat_id})>"
@@ -264,7 +268,8 @@ class AnalysisResult(Model):
 
     analysis_id = fields.UUIDField(pk=True, default=uuid.uuid4)
 
-    prompt = fields.ForeignKeyField("diff_models.Prompts", related_name="analysis")
+    prompt = fields.ForeignKeyField(
+        "diff_models.Prompts", related_name="analysis")
     result_text = fields.TextField()
     schedule = fields.ForeignKeyField(
         "diff_models.ChatSchedules",
@@ -315,7 +320,6 @@ class Prompts(Model):
     class Meta:
         table = "prompts"
 
-from tortoise import Model, fields
 
 MAX_VERSION_LENGTH = 255
 
@@ -326,4 +330,3 @@ class Aerich(Model):
 
     class Meta:
         ordering = ["-id"]
-

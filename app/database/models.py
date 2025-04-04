@@ -33,7 +33,7 @@ class Permissions(Model):
 
 
 class Companies(Model):
-    company_id = fields.CharField(max_length=255)
+    company_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     company_name = fields.CharField(max_length=255)
     description = fields.TextField(null=True)
 
@@ -130,10 +130,7 @@ class Chats(Model):
     # Уникальный идентификатор чата
     chat_id = fields.BigIntField(pk=True)
     chat_name = fields.CharField(max_length=255, null=True)
-    default_prompt = fields.ForeignKeyField(
-        "models.Prompts", related_name="chats", null=True)
     created_at = fields.DatetimeField(auto_now_add=True)
-    company = fields.ForeignKeyField("models.Companies", related_name="chats")
 
     @property
     def created_at_ts(self):
@@ -149,9 +146,11 @@ class Chats(Model):
 class Bots(Model):
     bot_id = fields.BigIntField(pk=True)
     bot_token = fields.CharField(max_length=255)
-    bot_name = fields.CharField(max_length=255)
+    secret_token = fields.CharField(max_length=255)
+    bot_username = fields.CharField(max_length=255)
+    bot_first_name = fields.CharField(max_length=255)
     company = fields.ForeignKeyField("models.Companies", related_name="bots")
-    is_active = fields.BooleanField(default=True)
+    is_active = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     @property
@@ -159,7 +158,7 @@ class Bots(Model):
         return int(self.created_at.timestamp())
 
     def __repr__(self):
-        return f"<Bots(bot_id={self.bot_id}, name='{self.bot_name}', active={self.is_active})>"
+        return f"<Bots(bot_id={self.bot_id}, name='{self.bot_username}', active={self.is_active})>"
 
     class Meta:
         table = "bots"
@@ -178,9 +177,9 @@ class BotChatRelations(Model):
         table = "bot_chat_relations"
 
 
-class Message(Model):
+class Messages(Model):
 
-    message_id = fields.UUIDField(pk=True, default=uuid.uuid4)
+    message_id = fields.CharField(pk=True, max_length=255)
     timestamp = fields.DatetimeField(auto_now_add=True)
     account = fields.ForeignKeyField(
         "models.Accounts", related_name="messages")
@@ -194,7 +193,7 @@ class Message(Model):
         return int(self.timestamp.timestamp())
 
     def __repr__(self):
-        return f"<Message(message_id={self.message_id}, chat={self.chat.chat_id}, account={self.account.account_id})>"
+        return f"<Messages(message_id={self.message_id}, chat={self.chat.chat_id}, account={self.account.account_id})>"
 
     class Meta:
         table = "messages"

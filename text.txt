@@ -1,0 +1,83 @@
+Информация о боте: {'id': 7492229228,
+ 'is_bot': True,
+  'first_name': 'VSP_tet_bit',
+   'username': 'VSP_testing_bot', 
+   'can_join_groups': True, 
+   'can_read_all_group_messages': False, 
+   'supports_inline_queries': False, 
+   'can_connect_to_business': False, '
+   has_main_web_app': False}
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc0Mzc3NDMxOH0.g1KVIblp054KW--DSqZt-FjkSQ_powf16lGoPcipxJI
+
+
+{
+  "token": "7492229228:AAG0c61NQoj3ZYBwRqjPuu4oYa_lwhO_YjE",
+  "company": "d252cd71-4e51-4006-9495-0b6af2b00f7d"
+}
+
+
+7492229228
+
+
+
+2025-04-04 14:07:40 | INFO     | Полученные данные апдейта: {'update_id': 580161662, 
+'edited_message': {'message_id': 189, 
+'from': {'id': 709498307, 
+'is_bot': False, 
+'first_name': 'Веста', 
+'username': 'GloomyLime', 
+'language_code': 'ru', 'is_premium': True},
+ 'chat': {'id': 709498307, 'first_name': 'Веста',
+  'username': 'GloomyLime', 'type': 'private'},
+   'date': 1743749752,
+    'edit_date': 1743750460, 
+    'text': 'Тестирование'}}
+
+
+2025-04-04 14:07:29 | INFO     | Полученные данные апдейта: {'update_id': 580161661, 
+'message':
+ {'message_id': 191,
+'from': {'id': 709498307, 'is_bot': False, 'first_name': 'Веста', 'username': 'GloomyLime', 'language_code': 'ru', 'is_premium': True}, 
+'chat': {'id': 709498307, 'first_name': 'Веста', 'username': 'GloomyLime', 'type': 'private'}, 
+'date': 1743750450, 
+'text': 'Тест'}}
+
+
+2025-04-04 14:17:24 | INFO     | Полученные данные апдейта:
+ {'update_id': 580161672, 
+ 'message': {'message_id': 4,
+ 'from': 
+ {'id': 709498307, 'is_bot': False, 'first_name': 'Веста', 'username': 'GloomyLime', 'language_code': 'ru', 'is_premium': True},
+  'chat': {'id': -1002513098155, 'title': 'Test', 'type': 'supergroup'}, 
+  'date': 1743751045,
+   'text': 'Тест'}}
+
+
+
+   chat_type = message["chat"]["type"]
+
+# Значения:
+# - "private" — личка
+# - "group" — обычная группа
+# - "supergroup" — супергруппа
+# - "channel" — канал
+
+
+2025-04-04 16:03:35 | DEBUG    | 📦 Parsed JSON:
+ {'update_id': 580161692, 
+ 'message':
+  {'message_id': 21, 
+  'from': {'id': 709498307, 'is_bot': False, 'first_name': 'Веста', 'username': 'GloomyLime', 'language_code': 'ru', 'is_premium': True}, 
+  'chat': {'id': -1002513098155, 'title': 'Test', 'type': 'supergroup'}, 
+  'date': 1743757415, 
+  'forward_origin': {'type': 'user', 
+  'sender_user': {'id': 709498307, 'is_bot': False, 'first_name': 'Веста', 'username': 'GloomyLime', 'language_code': 'ru', 'is_premium': True}, 
+  'date': 1743751354}, 
+  'forward_from': {'id': 709498307, 'is_bot': False, 'first_name': 'Веста', 'username': 'GloomyLime', 'language_code': 'ru', 'is_premium': True}, 
+  'forward_date': 1743751354, 
+  
+  'photo': [{'file_id': 'AgACAgIAAyEFAASVytWrAAMIZ--IsJosdtVO_iTum17zG1dKYj8AAnHmMRvvCYBLD09_jSzbkZEBAAMCAANzAAM2BA', 'file_unique_id': 'AQADceYxG-8JgEt4', 'file_size': 676, 'width': 90, 'height': 48}, 
+  {'file_id': 'AgACAgIAAyEFAASVytWrAAMIZ--IsJosdtVO_iTum17zG1dKYj8AAnHmMRvvCYBLD09_jSzbkZEBAAMCAANtAAM2BA', 'file_unique_id': 'AQADceYxG-8JgEty', 'file_size': 8592, 'width': 320, 'height': 170}, 
+  {'file_id': 'AgACAgIAAyEFAASVytWrAAMIZ--IsJosdtVO_iTum17zG1dKYj8AAnHmMRvvCYBLD09_jSzbkZEBAAMCAAN4AAM2BA', 'file_unique_id': 'AQADceYxG-8JgEt9', 'file_size': 29811, 'width': 800, 'height': 426}, 
+{'file_id': 'AgACAgIAAyEFAASVytWrAAMIZ--IsJosdtVO_iTum17zG1dKYj8AAnHmMRvvCYBLD09_jSzbkZEBAAMCAAN5AAM2BA', 'file_unique_id': 'AQADceYxG-8JgEt-', 'file_size': 47069, 'width': 1212, 'height': 646}]}}
