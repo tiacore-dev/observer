@@ -44,6 +44,7 @@ class PromptAutomaticSchema(BaseModel):
 def prompt_filter_params(
     search: Optional[str] = Query(
         None, description="Фильтр по названию промпта"),
+    company: Optional[UUID4] = Query(None),
     sort_by: Optional[str] = Query(
         "prompt_name", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
@@ -52,6 +53,7 @@ def prompt_filter_params(
 ):
     return {
         "search": search,
+        "company": company,
         "sort_by": sort_by,
         "order": order,
         "page": page,

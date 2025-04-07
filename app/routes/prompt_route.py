@@ -87,12 +87,15 @@ async def delete_prompt(
 @prompt_router.get("/all", response_model=PromptListResponseSchema, summary="Получение списка промптов с фильтрацией")
 async def get_prompts(
     filters: dict = Depends(prompt_filter_params),
-    admin: Users = Depends(get_current_user)
+    user: Users = Depends(get_current_user)
 ):
     logger.info(f"Запрос на список промптов: {filters}")
 
     try:
-        query = Q(company=admin.company)
+        query = Q()
+
+        if filters.get("company"):
+            query &= Q(company=filters["company"])
 
         if filters.get("search"):
             query &= Q(prompt_name__icontains=filters["search"])
