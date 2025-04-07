@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Path
+from fastapi import APIRouter, HTTPException, Depends, status, Path, Body
 from loguru import logger
 from tortoise.expressions import Q
 from app.handlers.telegram_api_url_handlers import validate_token_and_register, delete_webhook
@@ -10,7 +10,7 @@ bot_router = APIRouter()
 
 
 @bot_router.post("/add", status_code=status.HTTP_201_CREATED)
-async def add_bot(data: RegisterBotRequest, user: Users = Depends(get_current_user)):
+async def add_bot(data: RegisterBotRequest = Body(...), user: Users = Depends(get_current_user)):
     try:
         bot = await validate_token_and_register(data.token, data.company)
     except ValueError as e:

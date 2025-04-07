@@ -203,7 +203,7 @@ class Messages(Model):
 
 
 class ChatSchedules(Model):
-    schedule_id = fields.IntField(pk=True)
+    schedule_id = fields.UUIDField(pk=True, default=uuid.uuid4)
 
     chat = fields.ForeignKeyField(
         "diff_models.Chats", related_name="schedules")
@@ -235,13 +235,13 @@ class ChatSchedules(Model):
 
     created_at = fields.DatetimeField(auto_now_add=True)
 
+    time_to_send = fields.BigIntField()
+
     @property
     def created_at_ts(self):
         return int(self.created_at.timestamp())
     company = fields.ForeignKeyField(
         "diff_models.Companies", related_name="schedules")
-
-    time_to_send = fields.BigIntField()
 
     def __repr__(self):
         return f"<ChatSchedules(schedule_id={self.schedule_id}, chat={self.chat.chat_id}, type='{self.schedule_type}')>"

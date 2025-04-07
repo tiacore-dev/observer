@@ -3,15 +3,14 @@ from fastapi import APIRouter, Depends, Path, HTTPException, Body, status
 from loguru import logger
 from tortoise.expressions import Q
 from app.handlers.auth_handlers import get_current_user
-from app.database.models import Prompts, Users
+from app.database.models import Prompts, Users, Companies
 from app.pydantic_models.prompt_schemas import (
     PromptCreateSchema,
     PromptEditSchema,
     prompt_filter_params,
     PromptResponseSchema,
     PromptListResponseSchema,
-    PromptSchema,
-    PromptAutomaticSchema
+    PromptSchema
 )
 
 
@@ -22,11 +21,13 @@ prompt_router = APIRouter()
 async def add_prompt(data: PromptCreateSchema = Body(...), admin: Users = Depends(get_current_user)):
     logger.info(f"Создание промпта: {data.dict()}")
     try:
+        company = await Companies.get_or_none(company_id=data.company)
+        if not company:
+            raise HTTPException(status_code=400, detail="Компания не найдена")
         prompt = await Prompts.create(
             prompt_name=data.prompt_name,
             text=data.text,
-            company=admin.company
-        )
+            company=company)
         if not prompt:
             logger.error("Не удалось создать промпту")
             raise HTTPException(
@@ -112,7 +113,6 @@ async def get_prompts(
             "prompt_id",
             "prompt_name",
             "text",
-            "use_automatic",
             "company_id",
             "created_at"
         )
@@ -124,7 +124,6 @@ async def get_prompts(
                     prompt_id=p["prompt_id"],
                     prompt_name=p["prompt_name"],
                     text=p["text"],
-                    use_automatic=p["use_automatic"],
                     company=p["company_id"],
                     created_at=p["created_at"]
                 )
@@ -137,43 +136,6 @@ async def get_prompts(
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
 
 
-async def set_automatic(
-    prompt_id: UUID = Path(..., title="ID промпта",
-                           description="ID изменяемого промпта"),
-    data: PromptAutomaticSchema = Body(...),
-    admin: Users = Depends(get_current_user)
-):
-    use_automatic = data.use_automatic
-
-    logger.info(
-        f"Запрос на изменение флага 'use_automatic' для промпта {prompt_id}: {use_automatic}")
-
-    if use_automatic is None:
-        raise HTTPException(
-            status_code=400, detail="Поле use_automatic обязательно")
-
-    try:
-        # Сброс флага у всех промптов компании
-        if use_automatic:
-            logger.info(
-                f"Сброс флага 'use_automatic' у всех промптов компании {admin.company_id}")
-            await Prompts.filter(company=admin.company).update(use_automatic=False)
-
-        # Установка нового значения флага для выбранного промпта
-        updated_rows = await Prompts.filter(prompt_id=prompt_id, company=admin.company).update(use_automatic=use_automatic)
-
-        if not updated_rows:
-            logger.warning(f"Промпт {prompt_id} не найден")
-            raise HTTPException(status_code=404, detail="Промпт не найден")
-
-        logger.success(
-            f"Флаг 'use_automatic' у промпта {prompt_id} успешно обновлён на {use_automatic}")
-
-    except Exception as e:
-        logger.exception("Ошибка при обновлении флага use_automatic")
-        raise HTTPException(status_code=500, detail="Ошибка сервера") from e
-
-
 @prompt_router.get("/{prompt_id}", response_model=PromptSchema, summary="Просмотр промпта")
 async def get_prompt(
     prompt_id: UUID = Path(..., title="ID промпта",
@@ -182,11 +144,10 @@ async def get_prompt(
 ):
     logger.info(f"Запрос на просмотр промпта: {prompt_id}")
     try:
-        prompt = await Prompts.filter(prompt_id=prompt_id, company=admin.company).first().values(
+        prompt = await Prompts.filter(prompt_id=prompt_id).first().values(
             "prompt_id",
             "prompt_name",
             "text",
-            "use_automatic",
             "company_id",
             "created_at"
         )
@@ -199,7 +160,6 @@ async def get_prompt(
             prompt_id=prompt["prompt_id"],
             prompt_name=prompt["prompt_name"],
             text=prompt["text"],
-            use_automatic=prompt["use_automatic"],
             company=prompt["company_id"],
             created_at=prompt["created_at"]
         )

@@ -1,22 +1,23 @@
 import pytest
 from httpx import AsyncClient
-from app.database.models import Prompt
+from app.database.models import Prompts
 
 
 @pytest.mark.asyncio
-async def test_add_prompt(test_app: AsyncClient, jwt_token_admin):
+async def test_add_prompt(test_app: AsyncClient, jwt_token_admin, seed_company):
     """Тест добавления нового промпта."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
     data = {
         "prompt_name": "Test Prompt",
-        "text": "Содержимое тестового промпта"
+        "text": "Содержимое тестового промпта",
+        "company": seed_company['company_id']
     }
 
     response = test_app.post("/api/prompts/add", headers=headers, json=data)
     assert response.status_code == 201, f"Ошибка: {response.status_code}, {response.text}"
 
     response_data = response.json()
-    prompt = await Prompt.filter(prompt_name="Test Prompt").first()
+    prompt = await Prompts.filter(prompt_name="Test Prompt").first()
 
     assert prompt is not None, "Промпт не был сохранён в БД"
     assert response_data["prompt_id"] == str(prompt.prompt_id)
@@ -38,7 +39,7 @@ async def test_edit_prompt(test_app: AsyncClient, jwt_token_admin, seed_prompt):
 
     assert response.status_code == 204, f"Ошибка: {response.status_code}, {response.text}"
 
-    prompt = await Prompt.filter(prompt_id=seed_prompt['prompt_id']).first()
+    prompt = await Prompts.filter(prompt_id=seed_prompt['prompt_id']).first()
 
     assert prompt is not None, "Промпт не найден в базе"
     assert prompt.prompt_name == "Updated Prompt"
@@ -73,7 +74,7 @@ async def test_delete_prompt(test_app: AsyncClient, jwt_token_admin, seed_prompt
 
     assert response.status_code == 204, f"Ошибка: {response.status_code}, {response.text}"
 
-    prompt = await Prompt.filter(prompt_id=seed_prompt['prompt_id']).first()
+    prompt = await Prompts.filter(prompt_id=seed_prompt['prompt_id']).first()
     assert prompt is None, "Промпт не был удалён из базы"
 
 

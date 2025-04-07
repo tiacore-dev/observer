@@ -1,4 +1,5 @@
 from typing import List, Optional
+import datetime
 from pydantic import BaseModel, UUID4, Field
 from fastapi import Query
 
@@ -6,6 +7,7 @@ from fastapi import Query
 class PromptCreateSchema(BaseModel):
     prompt_name: str = Field(..., min_length=3, max_length=100)
     text: str = Field(...)
+    company: UUID4 = Field(...)
 
 
 class PromptEditSchema(BaseModel):
@@ -20,8 +22,7 @@ class PromptSchema(BaseModel):
     prompt_id: UUID4
     prompt_name: str
     text: str
-    use_automatic: Optional[bool] = False
-    created_at: int  # Timestamp
+    created_at: datetime.datetime
     company: UUID4
 
     class Config:
@@ -35,10 +36,6 @@ class PromptResponseSchema(BaseModel):
 class PromptListResponseSchema(BaseModel):
     total: int
     prompts: List[PromptSchema]
-
-
-class PromptAutomaticSchema(BaseModel):
-    use_automatic: bool = Field(...)
 
 
 def prompt_filter_params(

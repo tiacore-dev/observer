@@ -1,14 +1,14 @@
 import pytest
-from app.database.models import AdminUser, Company, UserRole
+from app.database.models import Users, Companies, UserRoles
 
 
 @pytest.mark.usefixtures("setup_db")
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
 async def seed_role():
-    role = await UserRole.create(role_id='admin', role_name="Администратор")
+    role = await UserRoles.create(role_name="Администратор")
     return {
-        "role_id": role.role_id,
+        "role_id": str(role.role_id),
         "role_name": role.role_name
     }
 
@@ -17,9 +17,9 @@ async def seed_role():
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
 async def seed_company():
-    company = await Company.create(company_name='Tiacore')
+    company = await Companies.create(company_name='Tiacore')
     return {
-        "company_id": company.company_id,
+        "company_id": str(company.company_id),
         "company_name": company.company_name
     }
 
@@ -27,19 +27,13 @@ async def seed_company():
 @pytest.mark.usefixtures("setup_db")
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
-async def seed_admin(seed_role, seed_company):
+async def seed_admin():
     """Добавляет тестового пользователя в базу перед тестом."""
-    role = await UserRole.get(role_id=seed_role['role_id'])
-    company = await Company.get(company_id=seed_company['company_id'])
-    user = await AdminUser.create_admin(
+    user = await Users.create_user(
         username="admin",
-        password="qweasdzcx",
-        role=role,
-        company=company
+        password="qweasdzcx"
     )
     return {
-        "user_id": str(user.admin_id),
+        "user_id": str(user.user_id),
         "username": user.username,
-        "role": user.role,
-        "company": user.company
     }
