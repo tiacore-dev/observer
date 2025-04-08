@@ -21,6 +21,7 @@ from app.pydantic_models.schedule_schemas import (
     ScheduleShortSchema
 )
 
+
 schedule_router = APIRouter()
 
 
@@ -128,7 +129,6 @@ async def get_schedules(
     user: Users = Depends(get_current_user)
 ):
     logger.info(f"Запрос на список расписаний: {filters}")
-
     try:
         query = Q()
 
@@ -157,10 +157,10 @@ async def get_schedules(
             (page - 1) * page_size
         ).limit(page_size).prefetch_related("chat", "prompt").values(
             "schedule_id",
-            "prompt_id",      # 👈 использовать ID, если тебе нужен только идентификатор
+            "prompt_id",
             "schedule_type",
             "enabled",
-            "company_id",     # 👈 аналогично
+            "company_id",
             "chat_id",
             "created_at"
         )
