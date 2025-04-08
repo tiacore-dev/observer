@@ -16,7 +16,6 @@ def create_app() -> FastAPI:
     #                   allowed_hosts=settings.ALLOWED_HOSTS)
 
     app.add_middleware(GZipMiddleware)
-    # app.add_middleware(CatchAllExceptionsMiddleware)
     # app.add_middleware(HTTPSRedirectMiddleware)
 
    # Конфигурация Tortoise ORM
@@ -28,16 +27,8 @@ def create_app() -> FastAPI:
         add_exception_handlers=True,
     )
 
-    # @app.middleware("http")
-    # async def log_raw_requests(request: Request, call_next):
-    #     body = await request.body()
-    #     print(
-    #         f"\n>>> RAW REQUEST <<<\nURL: {request.url}\nHeaders: {dict(request.headers)}\nBody: {body.decode('utf-8', errors='ignore')}")
-    #     response = await call_next(request)
-    #     return response
-
     setup_logger()
-    # Регистрация маршрутов
+
     register_routes(app)
 
     return app

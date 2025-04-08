@@ -34,3 +34,6 @@ class Settings:
     # Токен и ID каталога
     YANDEX_API_KEY = os.getenv('YANDEX_API_KEY')
     FOLDER_ID = os.getenv('FOLDER_ID')
+
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
