@@ -5,7 +5,7 @@ from loguru import logger
 import aiohttp
 import aiofiles
 from pydub import AudioSegment
-from app.database.models import Messages
+from app.database.models import Messages, Prompts
 from config import Settings
 
 
@@ -77,20 +77,20 @@ async def transcribe_audio(audio: bytes, file_format: str):
 
 
 # Асинхронный анализ текста через YandexGPT
-async def yandex_analyze(prompt: str, messages: list[Messages]):
+async def yandex_analyze(prompt: Prompts, messages: list[Messages]):
     logger.info("Начало анализа набора сообщений.")
 
     api_messages = []
     for message in messages:
-        if "text" in message and message["text"]:
+        if message.text:
             user = message.account.username
             chat = message.chat.chat_name
 
             message_data = {
                 "user": user,
                 "chat": chat,
-                "timestamp": message.get("timestamp", "Неизвестно"),
-                "text": message.get("text", "Пустое сообщение"),
+                "timestamp": message.timestamp.isoformat(),
+                "text": message.text
             }
             api_messages.append(json.dumps(message_data, ensure_ascii=False))
 
@@ -107,7 +107,7 @@ async def yandex_analyze(prompt: str, messages: list[Messages]):
             "maxTokens": 2000
         },
         "messages": [
-            {"role": "system", "text": prompt},
+            {"role": "system", "text": prompt.text},
             {"role": "user", "text": f"{api_messages}"}
         ]
     }
@@ -123,8 +123,13 @@ async def yandex_analyze(prompt: str, messages: list[Messages]):
                 response_data = await response.json()
 
         if "result" in response_data:
+            logger.debug(f"Ответ от YandexGPT: {response_data}")
             analysis = response_data["result"]["alternatives"][0]["message"]["text"]
-            return analysis, None, None
+            # Преобразуем строки в числа (если нужно работать с числами)
+            usage = response_data["result"]["usage"]
+            tokens_input = int(usage["inputTextTokens"])
+            tokens_output = int(usage["completionTokens"])
+            return analysis, tokens_input, tokens_output
         else:
             logger.error(f"Ошибка анализа: {response_data}")
             return None, None, None

@@ -265,6 +265,8 @@ class AnalysisResult(Model):
 
     prompt = fields.ForeignKeyField("models.Prompts", related_name="analysis")
     result_text = fields.TextField()
+    chat = fields.ForeignKeyField(
+        "models.Chats", related_name="analysis_results")
     schedule = fields.ForeignKeyField(
         "models.ChatSchedules",
         related_name="analysis_results",
@@ -274,19 +276,18 @@ class AnalysisResult(Model):
         "models.Companies", related_name="analysis")
     created_at = fields.DatetimeField(auto_now_add=True)
 
-    @property
-    def created_at_ts(self):
-        return int(self.created_at.timestamp())
     # Разворачиваем фильтры:
-    date_from = fields.BigIntField(null=True)
-    date_to = fields.BigIntField(null=True)
-    chat = fields.ForeignKeyField(
-        "models.Chats", related_name="analysis_results", null=True)
+    date_from = fields.BigIntField()
+    date_to = fields.BigIntField()
 
     tokens_input = fields.IntField()
     tokens_output = fields.IntField()
 
-    send_time = fields.BigIntField(nullable=True)
+    send_time = fields.BigIntField(null=True)
+
+    @property
+    def created_at_ts(self):
+        return int(self.created_at.timestamp())
 
     def __repr__(self):
         return f"<AnalysisResult(analysis_id={self.analysis_id}, prompt={self.prompt.prompt_id})>"

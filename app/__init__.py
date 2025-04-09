@@ -1,24 +1,23 @@
-from fastapi import FastAPI  # , Request
-from fastapi.middleware.gzip import GZipMiddleware
-# from fastapi.middleware.trustedhost import TrustedHostMiddleware
-# from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from logger import setup_logger
 from app.routes import register_routes
-# from app.exceptions.catch_middleware import CatchAllExceptionsMiddleware
+
 from config import Settings
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Observer", redirect_slashes=False)
     settings = Settings()
-    # app.add_middleware(TrustedHostMiddleware,
-    #                   allowed_hosts=settings.ALLOWED_HOSTS)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,  # Разрешаем использование кук и авторизации
+        allow_methods=["*"],
+        allow_headers=["*"],  # Разрешаем все заголовки
+    )
 
-    app.add_middleware(GZipMiddleware)
-    # app.add_middleware(HTTPSRedirectMiddleware)
-
-   # Конфигурация Tortoise ORM
     register_tortoise(
         app,
         db_url=settings.DATABASE_URL,

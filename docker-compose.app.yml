@@ -7,13 +7,14 @@ services:
     networks:
       - task_bot_network
 
-  tg-app:
+  web:
     build: .
     container_name: tg-app
     ports:
       - "8000:8000"
     networks:
       - observer_network
+
 
 
 networks:

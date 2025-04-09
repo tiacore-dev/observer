@@ -2,13 +2,11 @@ import os
 from dotenv import load_dotenv
 from app import create_app
 from app.database.models import Users, UserRoles, Companies, UserCompanyRelations
-
+from scheduler.scheduler import start_scheduler
 load_dotenv()
 
 # Порт и биндинг
 PORT = 8000
-
-# 📌 Автоматическое создание супер-админа
 
 
 app = create_app()
@@ -44,6 +42,7 @@ async def create_admin():
 async def startup_event():
     # Создаем администратора при запуске
     await create_admin()
+    # await start_scheduler()
 
 # 📌 Запуск Uvicorn
 if __name__ == "__main__":
