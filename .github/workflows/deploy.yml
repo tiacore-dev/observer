@@ -132,7 +132,7 @@ jobs:
             else
               echo "⚠️ Aerich завершился с ошибкой"
               echo "🔍 Вот что он сказал:"
-              docker compose -f docker-compose.web.yml logs aerich || true
+              docker compose -f docker-compose.app.yml logs aerich || true
             fi
 
 
@@ -145,7 +145,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOF
             cd $DEPLOY_PATH || exit 1
 
-            docker compose -f docker-compose.web.yml up -d --force-recreate web > /dev/null \
+            docker compose -f docker-compose.app.yml up -d --force-recreate web > /dev/null \
               && echo "✅ Контейнер перезапущен" \
               || { echo "❌ Контейнер не запустился"; exit 1; }
 
