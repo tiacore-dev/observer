@@ -11,7 +11,7 @@ settings = Settings()
 @pytest.fixture(scope="session")
 def test_app():
     """Фикстура для тестового приложения."""
-    app = create_app()
+    app = create_app(config_name="Test")
 
     client = TestClient(app)
 

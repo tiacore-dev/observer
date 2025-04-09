@@ -3,11 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from logger import setup_logger
 from app.routes import register_routes
-
 from config import Settings
 
 
-def create_app() -> FastAPI:
+def create_app(config_name='Development') -> FastAPI:
     app = FastAPI(title="Observer", redirect_slashes=False)
     settings = Settings()
     app.add_middleware(
@@ -17,12 +16,16 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],  # Разрешаем все заголовки
     )
+    if config_name == 'Test':
+        db_url = settings.TEST_DATABASE_URL
+    else:
+        db_url = settings.DATABASE_URL
 
     register_tortoise(
         app,
-        db_url=settings.DATABASE_URL,
+        db_url=db_url,
         modules={"models": ["app.database.models"]},
-        # generate_schemas=True,
+        generate_schemas=(config_name == 'Test'),
         add_exception_handlers=True,
     )
 
