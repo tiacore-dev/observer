@@ -1,20 +1,32 @@
 services:
   aerich:
     build: .
-    command: ["/bin/sh", "-c", "aerich init -t database.config.TORTOISE_ORM && aerich upgrade"]
+    command: ["aerich", "upgrade"]
     volumes:
       - .:/app
-    networks:
-      - task_bot_network
-
-  web:
-    build: .
-    container_name: tg-app
-    ports:
-      - "8000:8000"
+      - .env:/app/.env 
+    environment:
+      - TORTOISE_ORM=app.database.config.TORTOISE_ORM
+    env_file:
+      - .env  
     networks:
       - observer_network
 
+  web:
+    #image: ${DOCKERHUB_USERNAME}/crm-backend:${TAG}
+    build: .
+    tty: true
+    stdin_open: true
+    restart: always
+    ports:
+      - "${PORT}:8000"
+    volumes:
+      - ./logs:/app/logs  
+      - .env:/app/.env 
+    command: >
+       gunicorn -c gunicorn.conf.py run:app
+    networks:
+      - observer_network
 
 
 networks:
