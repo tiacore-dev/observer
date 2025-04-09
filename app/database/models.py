@@ -152,6 +152,7 @@ class Bots(Model):
     company = fields.ForeignKeyField("models.Companies", related_name="bots")
     is_active = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
+    comment = fields.TextField(null=True)
 
     @property
     def created_at_ts(self):

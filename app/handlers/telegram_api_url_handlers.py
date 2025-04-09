@@ -9,7 +9,7 @@ from app.utils.aiohttp_helpers import fetch_json, fetch_bytes
 settings = Settings()
 
 
-async def validate_token_and_register(token: str, company_id: str) -> Bots:
+async def validate_token_and_register(token: str, company_id: str, comment: str) -> Bots:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://api.telegram.org/bot{token}/getMe") as resp:
             data = await resp.json()
@@ -27,7 +27,8 @@ async def validate_token_and_register(token: str, company_id: str) -> Bots:
         bot_first_name=bot_info['first_name'],
         bot_token=token,
         secret_token=secret_token,
-        company=company
+        company=company,
+        comment=comment
     )
 
     return bot

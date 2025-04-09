@@ -7,6 +7,7 @@ from fastapi import Query
 class RegisterBotRequest(BaseModel):
     token: str = Field(...)
     company: UUID4 = Field(...)
+    comment: Optional[str] = Field(None)
 
 
 class BotResponseModel(BaseModel):
@@ -21,6 +22,7 @@ class BotSchema(BaseModel):
     company: UUID4
     is_active: bool
     created_at: datetime.datetime
+    comment: Optional[str] = None
 
 
 class BotListSchema(BaseModel):

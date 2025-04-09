@@ -12,7 +12,7 @@ bot_router = APIRouter()
 @bot_router.post("/add", status_code=status.HTTP_201_CREATED)
 async def add_bot(data: RegisterBotRequest = Body(...), user: Users = Depends(get_current_user)):
     try:
-        bot = await validate_token_and_register(data.token, data.company)
+        bot = await validate_token_and_register(data.token, data.company, data.comment)
     except ValueError as e:
         raise HTTPException(status_code=400, detail="Invalid bot token") from e
     return {"bot_id": bot.bot_id}
@@ -68,7 +68,8 @@ async def get_bots(
             "bot_first_name",
             "company_id",
             "is_active",
-            "created_at"
+            "created_at",
+            "comment"
         )
 
         return BotListSchema(
@@ -81,7 +82,8 @@ async def get_bots(
                     bot_first_name=bot["bot_first_name"],
                     company=bot["company_id"],
                     is_active=bot["is_active"],
-                    created_at=bot["created_at"]
+                    created_at=bot["created_at"],
+                    comment=bot['comment']
                 )
                 for bot in bots
             ]
@@ -107,7 +109,8 @@ async def get_bot(
             "bot_first_name",
             "company_id",
             "is_active",
-            "created_at"
+            "created_at",
+            "comment"
         )
 
         if bot is None:
@@ -121,7 +124,8 @@ async def get_bot(
             bot_first_name=bot["bot_first_name"],
             company=bot["company_id"],
             is_active=bot["is_active"],
-            created_at=bot["created_at"]
+            created_at=bot["created_at"],
+            comment=bot['comment']
         )
 
         logger.success(f"Промпт найден: {bot_schema}")

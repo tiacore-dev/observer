@@ -1,0 +1,8 @@
+{
+  "upgrade": [
+    "ALTER TABLE \"bots\" ADD \"comment\" TEXT"
+  ],
+  "downgrade": [
+    "ALTER TABLE \"bots\" DROP COLUMN \"comment\""
+  ]
+}
