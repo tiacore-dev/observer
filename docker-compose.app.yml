@@ -13,7 +13,7 @@ services:
       - observer_network
 
   web:
-    image: ${DOCKERHUB_USERNAME}/crm-backend:${TAG}
+    image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
     tty: true
     stdin_open: true
     restart: always
