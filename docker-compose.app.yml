@@ -13,8 +13,7 @@ services:
       - observer_network
 
   web:
-    #image: ${DOCKERHUB_USERNAME}/crm-backend:${TAG}
-    build: .
+    image: ${DOCKERHUB_USERNAME}/crm-backend:${TAG}
     tty: true
     stdin_open: true
     restart: always
@@ -31,4 +30,4 @@ services:
 
 networks:
   observer_network:
-    driver: bridge
+    external: true
