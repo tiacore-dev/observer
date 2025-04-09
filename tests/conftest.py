@@ -17,10 +17,6 @@ def test_app():
 
     yield client  # Отдаём клиент тестам
 
-    # Закрываем соединения после тестов
-    import asyncio
-    asyncio.run(Tortoise.close_connections())
-
 
 @pytest.fixture(scope="function", autouse=True)
 @pytest.mark.asyncio
