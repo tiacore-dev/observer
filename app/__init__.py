@@ -18,13 +18,12 @@ def create_app(config_name='Development') -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],  # Разрешаем все заголовки
     )
-    app.mount("/metrics", make_asgi_app())
-
-    init_tracer(app)
 
     if config_name == 'Test':
         db_url = settings.TEST_DATABASE_URL
     else:
+        app.mount("/metrics", make_asgi_app())
+        init_tracer(app)
         db_url = settings.DATABASE_URL
 
     register_tortoise(
