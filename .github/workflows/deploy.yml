@@ -46,7 +46,12 @@ jobs:
 
       - name: Run Tests in Docker
         run: |
-          docker buildx build --load -t observer-backend-test --target test .
+          docker buildx build \
+            --target test \
+            --cache-from=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache \
+            --cache-to=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache,mode=max \
+            --load \
+            -t observer-backend-test .
           docker run --rm --env-file .env.test observer-backend-test pytest --maxfail=3 --disable-warnings
 
 
@@ -163,7 +168,14 @@ jobs:
             STATUS="❌ Деплой *с ошибкой*"
           fi
 
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id=$CHAT_ID \
-            -d text="${STATUS}\nВетка: *${{ github.ref_name }}*\nТег: \`${{ github.sha }}\`" \
-            -d parse_mode=Markdown
+            -d parse_mode=Markdown \
+            -d "text=${STATUS}
+
+            📦 *Ветка:* \`${{ github.ref_name }}\`
+            🔖 *Тег:* \`${{ github.sha }}\`
+            📝 *Коммит:* ${COMMIT_MESSAGE}"
+

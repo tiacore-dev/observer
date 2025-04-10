@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends,  HTTPException, Body, status
 from loguru import logger
 from tortoise.expressions import Q
 from app.handlers.auth_handlers import get_current_user
+from app.scheduler.add_or_remove_schedules import add_schedule_job, remove_schedule_job
 from app.database.models import (
     ChatSchedules,
     Users,
@@ -55,9 +56,10 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
         )
 
         # Привязываем чаты к расписанию
-        for chat_id in data.target_chats:
-            await TargetChats.create(schedule=schedule, chat_id=chat_id)
-
+        if data.target_chats:
+            for chat_id in data.target_chats:
+                await TargetChats.create(schedule=schedule, chat_id=chat_id)
+        add_schedule_job(schedule)
         return ScheduleResponseSchema(schedule_id=schedule.schedule_id)
 
     except Exception as e:
@@ -69,34 +71,45 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
 async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...), admin: Users = Depends(get_current_user)):
     updated_data = data.model_dump(exclude_unset=True)
     schedule = await ChatSchedules.get_or_none(schedule_id=schedule_id)
+    remove_schedule_job(schedule_id)
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
     if "company" in updated_data:
         company = await Companies.get_or_none(company_id=data.company)
+        if not company:
+            raise HTTPException(status_code=404, detail="Компания не найдена")
         updated_data['company'] = company
 
     if "chat" in updated_data:
         chat = await Chats.get_or_none(chat_id=data.chat)
+        if not chat:
+            raise HTTPException(status_code=404, detail="Чат не найден")
         updated_data['chat'] = chat
     if "prompt" in updated_data:
         prompt = await Prompts.get_or_none(prompt_id=data.prompt)
+        if not prompt:
+            raise HTTPException(status_code=404, detail="Промпт не найден")
         updated_data['prompt'] = prompt
 
     if "bot" in updated_data:
         bot = await Bots.get_or_none(bot_id=data.bot)
+        if not bot:
+            raise HTTPException(status_code=404, detail="Бот не найден")
         updated_data['bot'] = bot
 
     if "time_of_day" in updated_data:
         updated_data["time_of_day"] = updated_data["time_of_day"].isoformat()
 
     try:
-        updated_rows = await ChatSchedules.filter(schedule_id=schedule_id).update(**updated_data)
+        schedule = schedule.update_from_dict(updated_data)
+        await schedule.save()
 
-        if not updated_rows:
+        if not schedule:
             logger.warning(f"Расписание {schedule_id} не найдено")
             raise HTTPException(
                 status_code=404, detail="Расписание не найдено")
-
+        if schedule.enabled:
+            add_schedule_job(schedule_id)
         logger.success(f"Расписание {schedule_id} успешно обновлено")
         if data.target_chats:
             # Привязываем чаты к расписанию
@@ -107,7 +120,7 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
         if data.removed_chats:
             for chat_id in data.removed_chats:
                 chat = await Chats.get_or_none(chat_id=chat_id)
-                await Chats.filter(chat=chat).delete()
+                await TargetChats.filter(schedule=schedule, chat=chat).delete()
 
         return ScheduleResponseSchema(schedule_id=schedule.schedule_id)
 
@@ -125,6 +138,7 @@ async def delete_schedule(schedule_id: UUID, admin: Users = Depends(get_current_
         await TargetChats.filter(schedule=schedule).delete()
         await schedule.delete()
         logger.success(f"Расписание {schedule_id} удалено")
+        remove_schedule_job(schedule_id)
     except Exception as e:
         logger.exception(f"Ошибка при удалении расписания {schedule_id}")
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
@@ -132,7 +146,6 @@ async def delete_schedule(schedule_id: UUID, admin: Users = Depends(get_current_
 
 @schedule_router.get("/all", response_model=ScheduleListSchema, summary="Получение списка расписаний с фильтрацией")
 async def get_schedules(
-    # 👈 у тебя опечатка в названии, лучше переименовать :)
     filters: dict = Depends(schedule_filter_params),
     user: Users = Depends(get_current_user)
 ):

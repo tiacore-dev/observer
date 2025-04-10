@@ -1,18 +1,16 @@
-from datetime import datetime
 from loguru import logger
 from pytz import timezone
+from app.scheduler.init_scheduler import scheduler
+from app.scheduler.add_or_remove_schedules import add_schedule_job
 
-from scheduler.init_scheduler import scheduler
-from scheduler.add_or_remove_schedules import add_schedule_job
-
-from app.database.models import ChatSchedules, BotChatRelations
+from app.database.models import ChatSchedules
 # Настройка таймзоны Новосибирска
 novosibirsk_tz = timezone('Asia/Novosibirsk')
 
 
 async def start_scheduler():
 
-    schedules = await ChatSchedules.filter(enabled=True).prefetch_related('chat')
+    schedules = await ChatSchedules.filter(enabled=True).prefetch_related('chat', 'prompt', 'company', 'bot')
 
     for schedule in schedules:
         add_schedule_job(schedule)

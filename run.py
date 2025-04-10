@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from app import create_app
 from app.database.models import Users, UserRoles, Companies, UserCompanyRelations
-from scheduler.scheduler import start_scheduler
+from app.scheduler.scheduler import start_scheduler
 
 load_dotenv()
 
