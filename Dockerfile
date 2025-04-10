@@ -5,8 +5,7 @@ WORKDIR /app
 
 # Python-зависимости
 COPY requirements.txt test-requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r test-requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # ===== TESTING =====
 FROM base AS test   
