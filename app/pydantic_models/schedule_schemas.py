@@ -1,6 +1,7 @@
 from typing import Optional, List
 import datetime
-from pydantic import BaseModel, Field, UUID4
+from apscheduler.triggers.cron import CronTrigger
+from pydantic import BaseModel, Field, UUID4, field_validator, model_validator
 from fastapi import Query
 
 
@@ -21,6 +22,40 @@ class ScheduleCreateSchema(BaseModel):
     time_to_send: int = Field(...)
     company: UUID4 = Field(...)
 
+    @field_validator("cron_expression")
+    @classmethod
+    def validate_cron_expression(cls, value):
+        if value:
+            try:
+                CronTrigger.from_crontab(value)
+            except Exception as e:
+                raise ValueError(f"Некорректное cron-выражение: {e}") from e
+        return value
+
+    @model_validator(mode="after")
+    def validate_required_fields(self):
+        match self.schedule_type:
+            case "interval":
+                if self.interval_hours is None and self.interval_minutes is None:
+                    raise ValueError(
+                        "Для типа interval необходимо указать interval_hours или interval_minutes")
+
+            case "daily_time":
+                if self.time_of_day is None:
+                    raise ValueError(
+                        "Для типа daily_time необходимо указать time_of_day")
+
+            case "cron":
+                if self.cron_expression is None:
+                    raise ValueError(
+                        "Для типа cron необходимо указать cron_expression")
+
+            case "once":
+                if self.run_at is None:
+                    raise ValueError("Для типа once необходимо указать run_at")
+
+        return self
+
 
 class ScheduleEditSchema(BaseModel):
     chat: Optional[int] = Field(None)
@@ -39,6 +74,33 @@ class ScheduleEditSchema(BaseModel):
     enabled: Optional[bool] = Field(None)
     time_to_send: Optional[int] = Field(None)
     company: Optional[UUID4] = Field(None)
+
+    @field_validator("cron_expression")
+    @classmethod
+    def validate_cron_expression(cls, value):
+        if value:
+            try:
+                CronTrigger.from_crontab(value)
+            except Exception as e:
+                raise ValueError(f"Некорректное cron-выражение: {e}") from e
+        return value
+
+    @model_validator(mode="after")
+    def validate_schedule_edit(self):
+        if self.schedule_type == "interval" and not (self.interval_hours or self.interval_minutes):
+            raise ValueError(
+                "Для типа interval нужно указать interval_hours или interval_minutes")
+
+        if self.schedule_type == "daily_time" and not self.time_of_day:
+            raise ValueError("Для типа daily_time нужно указать time_of_day")
+
+        if self.schedule_type == "cron" and not self.cron_expression:
+            raise ValueError("Для типа cron нужно указать cron_expression")
+
+        if self.schedule_type == "once" and not self.run_at:
+            raise ValueError("Для типа once нужно указать run_at")
+
+        return self
 
 
 class ScheduleSchema(BaseModel):
