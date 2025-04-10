@@ -157,10 +157,16 @@ jobs:
             docker image prune -f > /dev/null
           EOF
 
+
+  notify:
+    name: 📬 Telegram Notify
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
       - name: 📬 Telegram Notification
-        if: always()
         run: |
-          if [ "${{ job.status }}" == "success" ]; then
+          STATUS_CODE="${{ job.status }}"
+          if [ "$STATUS_CODE" = "success" ]; then
             CHAT_ID="${{ secrets.TELEGRAM_SUCCESS_CHAT_ID }}"
             STATUS="✅ Деплой *успешен*"
           else
@@ -171,7 +177,7 @@ jobs:
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=$CHAT_ID \
+            -d chat_id="$CHAT_ID" \
             -d parse_mode=Markdown \
             -d "text=${STATUS}
 
