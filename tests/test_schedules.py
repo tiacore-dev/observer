@@ -6,7 +6,7 @@ from app.database.models import ChatSchedules
 
 
 @pytest.mark.asyncio
-async def test_add_schedule(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company):
+async def test_add_schedule(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
     data = {
         "prompt": seed_prompt['prompt_id'],
@@ -16,7 +16,8 @@ async def test_add_schedule(test_app: AsyncClient, jwt_token_admin, seed_prompt,
         "enabled": True,
         "time_to_send": int(time.time()) + 600,
         "company": str(seed_company['company_id']),
-        "target_chats": [seed_chat['chat_id']]
+        "target_chats": [seed_chat['chat_id']],
+        "bot": seed_bot['bot_id']
     }
 
     response = test_app.post("/api/schedules/add", headers=headers, json=data)

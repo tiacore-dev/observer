@@ -1,4 +1,5 @@
 from uuid import UUID
+import datetime
 from fastapi import APIRouter, Depends,  HTTPException, Body, status
 from loguru import logger
 from tortoise.expressions import Q
@@ -97,8 +98,17 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
             raise HTTPException(status_code=404, detail="Бот не найден")
         updated_data['bot'] = bot
 
-    if "time_of_day" in updated_data:
-        updated_data["time_of_day"] = updated_data["time_of_day"].isoformat()
+# временно вырезаем time_of_day, чтобы вручную вставить строкой
+    time_of_day_value = updated_data.pop("time_of_day", None)
+    schedule = schedule.update_from_dict(updated_data)
+
+    if time_of_day_value:
+        if isinstance(time_of_day_value, datetime.time):
+            # SQLite не любит time — сериализуем вручную
+            time_of_day_value = time_of_day_value.isoformat()
+        schedule.time_of_day = time_of_day_value
+
+    await schedule.save()
 
     try:
         schedule = schedule.update_from_dict(updated_data)
@@ -184,7 +194,7 @@ async def get_schedules(
             "company_id",
             "chat_id",
             "created_at",
-            "bot"
+            "bot_id"
         )
 
         return ScheduleListSchema(
@@ -197,7 +207,8 @@ async def get_schedules(
                     enabled=s["enabled"],
                     company=s["company_id"],
                     chat=s["chat_id"],
-                    created_at=s["created_at"]
+                    created_at=s["created_at"],
+                    bot=s['bot_id']
                 )
                 for s in schedules
             ]
@@ -210,7 +221,7 @@ async def get_schedules(
 
 @schedule_router.get("/{schedule_id}", response_model=ScheduleSchema)
 async def get_schedule(schedule_id: UUID, admin: Users = Depends(get_current_user)):
-    schedule = await ChatSchedules.get_or_none(schedule_id=schedule_id).prefetch_related("target_chats", "company", "chat", "prompt")
+    schedule = await ChatSchedules.get_or_none(schedule_id=schedule_id).prefetch_related("target_chats", "company", "chat", "prompt", "bot")
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
 
@@ -231,5 +242,6 @@ async def get_schedule(schedule_id: UUID, admin: Users = Depends(get_current_use
         company=schedule.company.company_id,
         created_at=schedule.created_at,
         last_run_at=schedule.last_run_at,
-        target_chats=list(target_chats)
+        target_chats=list(target_chats),
+        bot=schedule.bot.bot_id
     )

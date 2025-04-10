@@ -40,7 +40,8 @@ pytest_plugins = [
     "tests.fixtures.main_fixtures",  # Фикстуры, связанные с именами, статусами, ролями
     "tests.fixtures.prompts",
     "tests.fixtures.schedules",
-    "tests.fixtures.chats"
+    "tests.fixtures.chats",
+    "tests.fixtures.bots"
 ]
 
 
