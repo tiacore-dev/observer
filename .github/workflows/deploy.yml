@@ -177,21 +177,22 @@ jobs:
           if [ "$BUILD_STATUS" != "success" ]; then
             STATUS="❌ *Ошибка сборки или тестов*"
             CHAT_ID="${{ secrets.TELEGRAM_PERSONAL_CHAT_ID }}"
+            EXTRA_LINK="\n\n[🔍 Открыть GitHub Actions]($RUN_URL)"
           elif [ "$DEPLOY_STATUS" != "success" ]; then
             STATUS="🛑 *Ошибка деплоя*"
             CHAT_ID="${{ secrets.TELEGRAM_PERSONAL_CHAT_ID }}"
+            EXTRA_LINK="\n\n[🔍 Открыть GitHub Actions]($RUN_URL)"
           else
             STATUS="✅ Деплой *успешен*"
             CHAT_ID="${{ secrets.TELEGRAM_SUCCESS_CHAT_ID }}"
+            EXTRA_LINK=""
           fi
 
           TEXT="${STATUS}
 
           📦 *Ветка:* \`$REF_NAME\`
           🔖 *Тег:* \`$SHA\`
-          📝 *Коммит:* $COMMIT_MESSAGE
-
-          [🔍 Открыть GitHub Actions]($RUN_URL)"
+          📝 *Коммит:* $COMMIT_MESSAGE${EXTRA_LINK}"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="$CHAT_ID" \
