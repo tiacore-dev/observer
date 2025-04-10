@@ -18,3 +18,9 @@ tenacity==9.0.0
 APScheduler==3.11.0
 pytz==2024.2
 pydub==0.25.1
+
+opentelemetry-api==1.31.1
+opentelemetry-sdk==1.31.1
+opentelemetry-exporter-otlp==1.31.1
+opentelemetry-instrumentation-fastapi==0.52b1
+prometheus_client==0.21.1

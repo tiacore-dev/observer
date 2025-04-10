@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
-from logger import setup_logger
+from prometheus_client import make_asgi_app
+from metrics.logger import setup_logger
+from metrics.tracer import init_tracer
 from app.routes import register_routes
 from config import Settings
 
@@ -16,6 +18,10 @@ def create_app(config_name='Development') -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],  # Разрешаем все заголовки
     )
+    app.mount("/metrics", make_asgi_app())
+
+    init_tracer(app)
+
     if config_name == 'Test':
         db_url = settings.TEST_DATABASE_URL
     else:
