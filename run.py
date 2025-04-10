@@ -9,7 +9,7 @@ load_dotenv()
 # Порт и биндинг
 PORT = 8000
 
-app = create_app()
+app = create_app(config_name='Development')
 
 
 async def create_admin():

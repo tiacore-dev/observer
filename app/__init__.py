@@ -21,9 +21,11 @@ def create_app(config_name='Development') -> FastAPI:
 
     if config_name == 'Test':
         db_url = settings.TEST_DATABASE_URL
-    else:
+    elif config_name == 'Development':
         app.mount("/metrics", make_asgi_app())
         init_tracer(app)
+        db_url = settings.DATABASE_URL
+    else:
         db_url = settings.DATABASE_URL
 
     register_tortoise(
