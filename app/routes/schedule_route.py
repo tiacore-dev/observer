@@ -9,7 +9,8 @@ from app.database.models import (
     TargetChats,
     Prompts,
     Chats,
-    Companies
+    Companies,
+    Bots
 )
 from app.pydantic_models.schedule_schemas import (
     ScheduleCreateSchema,
@@ -30,10 +31,11 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
     # Создаем расписание
     company = await Companies.get_or_none(company_id=data.company)
     chat = await Chats.get_or_none(chat_id=data.chat)
+    bot = await Bots.get_or_none(bot_id=data.bot)
     prompt = await Prompts.get_or_none(prompt_id=data.prompt)
-    if not company or not chat or not prompt:
+    if not company or not chat or not prompt or not bot:
         logger.warning(
-            "Компания, чат или промпт не найдены при создании расписания")
+            "Компания, чат, бот или промпт не найдены при создании расписания")
         raise HTTPException(
             status_code=404, detail="Компания, чат или промпт не найдены")
     try:
@@ -49,6 +51,7 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
             enabled=data.enabled,
             time_to_send=data.time_to_send,
             company=company,
+            bot=bot
         )
 
         # Привязываем чаты к расписанию
@@ -79,6 +82,10 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
         prompt = await Prompts.get_or_none(prompt_id=data.prompt)
         updated_data['prompt'] = prompt
 
+    if "bot" in updated_data:
+        bot = await Bots.get_or_none(bot_id=data.bot)
+        updated_data['bot'] = bot
+
     if "time_of_day" in updated_data:
         updated_data["time_of_day"] = updated_data["time_of_day"].isoformat()
 
@@ -86,10 +93,11 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
         updated_rows = await ChatSchedules.filter(schedule_id=schedule_id).update(**updated_data)
 
         if not updated_rows:
-            logger.warning(f"промпта {schedule_id} не найдена")
-            raise HTTPException(status_code=404, detail="промпта не найдена")
+            logger.warning(f"Расписание {schedule_id} не найдено")
+            raise HTTPException(
+                status_code=404, detail="Расписание не найдено")
 
-        logger.success(f"промпта {schedule_id} успешно обновлена")
+        logger.success(f"Расписание {schedule_id} успешно обновлено")
         if data.target_chats:
             # Привязываем чаты к расписанию
             for chat_id in data.target_chats:
@@ -162,7 +170,8 @@ async def get_schedules(
             "enabled",
             "company_id",
             "chat_id",
-            "created_at"
+            "created_at",
+            "bot"
         )
 
         return ScheduleListSchema(

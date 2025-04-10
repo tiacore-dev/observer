@@ -16,7 +16,7 @@ class ScheduleCreateSchema(BaseModel):
     run_at: Optional[datetime.datetime] = Field(None)
 
     target_chats: List[int] = Field(...)
-
+    bot: UUID4 = Field(...)
     enabled: Optional[bool] = True
     time_to_send: int = Field(...)
     company: UUID4 = Field(...)
@@ -35,7 +35,7 @@ class ScheduleEditSchema(BaseModel):
 
     target_chats: Optional[List[int]] = Field(None)
     removed_chats: Optional[List[int]] = Field(None)
-
+    bot: Optional[UUID4] = Field(None)
     enabled: Optional[bool] = Field(None)
     time_to_send: Optional[int] = Field(None)
     company: Optional[UUID4] = Field(None)
@@ -59,6 +59,8 @@ class ScheduleSchema(BaseModel):
     created_at: datetime.datetime
     time_to_send: int
 
+    bot: UUID4
+
     target_chats: list[int]
 
 
@@ -70,6 +72,7 @@ class ScheduleShortSchema(BaseModel):
     company: UUID4
     chat: int
     created_at: datetime.datetime
+    bot: UUID4
 
 
 class ScheduleListSchema(BaseModel):

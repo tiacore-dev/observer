@@ -4,6 +4,7 @@ from .prompt_route import prompt_router
 from .webhook_route import webhook_router
 from .schedule_route import schedule_router
 from .analyze_route import analyze_router
+from .company_route import company_router
 
 
 def register_routes(app):
@@ -17,3 +18,5 @@ def register_routes(app):
         schedule_router, prefix="/api/schedules", tags=["Schedules"])
     app.include_router(
         analyze_router, prefix="/api/analysis", tags=["Analysis"])
+    app.include_router(
+        company_router, prefix="/api/companies", tags=["Companies"])

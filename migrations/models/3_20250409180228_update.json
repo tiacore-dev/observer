@@ -1,0 +1,10 @@
+{
+  "upgrade": [
+    "ALTER TABLE \"chat_schedules\" ADD \"bot_id\" BIGINT NOT NULL",
+    "ALTER TABLE \"chat_schedules\" ADD CONSTRAINT \"fk_chat_sch_bots_592fd705\" FOREIGN KEY (\"bot_id\") REFERENCES \"bots\" (\"bot_id\") ON DELETE CASCADE"
+  ],
+  "downgrade": [
+    "ALTER TABLE \"chat_schedules\" DROP CONSTRAINT \"fk_chat_sch_bots_592fd705\"",
+    "ALTER TABLE \"chat_schedules\" DROP COLUMN \"bot_id\""
+  ]
+}

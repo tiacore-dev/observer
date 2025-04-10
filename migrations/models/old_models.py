@@ -234,6 +234,8 @@ class ChatSchedules(Model):
 
     time_to_send = fields.BigIntField()
 
+    bot = fields.ForeignKeyField("diff_models.Bots", related_name="schedules")
+
     @property
     def created_at_ts(self):
         return int(self.created_at.timestamp())
