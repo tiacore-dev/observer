@@ -19,9 +19,11 @@ def create_app(config_name='Development') -> FastAPI:
         allow_headers=["*"],  # Разрешаем все заголовки
     )
 
+    setup_logger()
     if config_name == 'Test':
         db_url = settings.TEST_DATABASE_URL
     elif config_name == 'Development':
+        print("⚙️  Mounting /metrics")
         app.mount("/metrics", make_asgi_app())
         init_tracer(app)
         db_url = settings.DATABASE_URL
@@ -35,8 +37,6 @@ def create_app(config_name='Development') -> FastAPI:
         generate_schemas=(config_name == 'Test'),
         add_exception_handlers=True,
     )
-
-    setup_logger()
 
     register_routes(app)
 

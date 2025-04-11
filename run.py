@@ -11,6 +11,9 @@ PORT = 8000
 
 app = create_app(config_name='Development')
 
+for route in app.routes:
+    print("🛣️", route.path, "→", getattr(route, "endpoint", None))
+
 
 async def create_admin():
     try:
