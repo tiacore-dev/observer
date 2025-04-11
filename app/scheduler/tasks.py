@@ -1,8 +1,7 @@
 # from celery import app
 
-from datetime import datetime
+from datetime import datetime, timezone
 from aiogram import Bot
-from pytz import timezone, UTC
 from loguru import logger
 from app.yandex_funcs.yandex_funcs import yandex_analyze
 from app.database.models import (
@@ -12,9 +11,6 @@ from app.database.models import (
     ChatSchedules,
     Prompts
 )
-
-
-novosibirsk_tz = timezone('Asia/Novosibirsk')
 
 
 async def analyze(schedule: ChatSchedules):
@@ -29,11 +25,11 @@ async def analyze(schedule: ChatSchedules):
         logger.error(f"Чат {chat_id} не найден.")
         raise ValueError(f"Чат {chat_id} не найден.")
 
-    now_nsk = datetime.now(novosibirsk_tz)
+    now_utc = datetime.now(timezone.utc)
 
     # Определяем начало анализа
     if schedule.last_run_at:
-        analysis_start = schedule.last_run_at.replace(tzinfo=UTC)
+        analysis_start = schedule.last_run_at
     else:
         first_message = await Messages.filter(chat=chat).order_by("timestamp").first()
         if not first_message:
@@ -46,9 +42,9 @@ async def analyze(schedule: ChatSchedules):
                 "prompt": schedule.prompt,
                 "schedule": schedule
             }
-        analysis_start = first_message.timestamp.replace(tzinfo=UTC)
+        analysis_start = first_message.timestamp
 
-    analysis_end = now_nsk.astimezone(UTC)
+    analysis_end = now_utc
 
     logger.info(f"Диапазон анализа: {analysis_start} - {analysis_end}")
 

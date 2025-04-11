@@ -1,12 +1,10 @@
-from datetime import datetime, timedelta
-from pytz import timezone
+from datetime import datetime, timedelta, timezone
 from loguru import logger
 from app.scheduler.tasks import analyze, save_analysis_result, send_analysis_result
 from app.scheduler.init_scheduler import scheduler
 from app.database.models import Chats, AnalysisResult, TargetChats, ChatSchedules, Bots
 from metrics.analysis_metrics import AnalysisMetrics
 
-novosibirsk_tz = timezone('Asia/Novosibirsk')
 metrics = AnalysisMetrics()
 
 
@@ -21,7 +19,7 @@ async def execute_analysis(schedule: ChatSchedules):
         analysis_id = await save_analysis_result(data)
 
         if analysis_id:
-            now = datetime.now(novosibirsk_tz)
+            now = datetime.now(timezone.utc)
 
             if schedule.send_strategy == "fixed":
                 send_time_today = now.replace(
