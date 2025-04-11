@@ -1,6 +1,6 @@
 # from celery import app
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from aiogram import Bot
 from pytz import timezone, UTC
 from loguru import logger
@@ -17,7 +17,7 @@ from app.database.models import (
 novosibirsk_tz = timezone('Asia/Novosibirsk')
 
 
-async def analyze(schedule: ChatSchedules, analysis_time: datetime):
+async def analyze(schedule: ChatSchedules):
     """
     Анализирует сообщения в чате за указанный временной промежуток.
     """
@@ -31,24 +31,24 @@ async def analyze(schedule: ChatSchedules, analysis_time: datetime):
 
     now_nsk = datetime.now(novosibirsk_tz)
 
-    # now_nsk уже timezone-aware, значит можно безопасно заменять время и отнимать дни
-    analysis_start_nsk = now_nsk.replace(
-        hour=analysis_time.hour,
-        minute=analysis_time.minute,
-        second=analysis_time.second,
-        microsecond=0
-    ) - timedelta(days=1)
+    # Определяем начало анализа
+    if schedule.last_run_at:
+        analysis_start = schedule.last_run_at.replace(tzinfo=UTC)
+    else:
+        first_message = await Messages.filter(chat=chat).order_by("timestamp").first()
+        if not first_message:
+            logger.warning(f"Нет сообщений в чате {chat_id} для анализа")
+            return {
+                "chat": chat,
+                "analysis_result": None,
+                "tokens_input": 0,
+                "tokens_output": 0,
+                "prompt": schedule.prompt,
+                "schedule": schedule
+            }
+        analysis_start = first_message.timestamp.replace(tzinfo=UTC)
 
-    analysis_end_nsk = now_nsk.replace(
-        hour=analysis_time.hour,
-        minute=analysis_time.minute,
-        second=analysis_time.second,
-        microsecond=0
-    )
-
-    # оба уже имеют tzinfo, можно переводить в UTC
-    analysis_start = analysis_start_nsk.astimezone(UTC)
-    analysis_end = analysis_end_nsk.astimezone(UTC)
+    analysis_end = now_nsk.astimezone(UTC)
 
     logger.info(f"Диапазон анализа: {analysis_start} - {analysis_end}")
 
@@ -60,8 +60,8 @@ async def analyze(schedule: ChatSchedules, analysis_time: datetime):
         raise
 
     if not messages:
-        logger.warning(f"""Нет сообщений для анализа в чате {
-            chat_id} за период {analysis_start} - {analysis_end}.""")
+        logger.warning(
+            f"Нет сообщений для анализа в чате {chat_id} за период {analysis_start} - {analysis_end}.")
         return {
             "chat": chat,
             "analysis_result": None,
@@ -74,11 +74,10 @@ async def analyze(schedule: ChatSchedules, analysis_time: datetime):
     logger.info(f"Сообщений для анализа найдено: {len(messages)}")
 
     try:
-
         prompt = await Prompts.get_or_none(prompt_id=schedule.prompt.prompt_id)
         if not prompt:
             raise ValueError(
-                f"Промпт с ID {chat['default_prompt_id']} не найден.")
+                f"Промпт с ID {schedule.prompt.prompt_id} не найден.")
 
         analysis_result, tokens_input, tokens_output = yandex_analyze(
             prompt, messages)

@@ -10,14 +10,14 @@ novosibirsk_tz = timezone('Asia/Novosibirsk')
 metrics = AnalysisMetrics()
 
 
-async def execute_analysis(schedule: ChatSchedules, analysis_time):
+async def execute_analysis(schedule: ChatSchedules):
     """
     Выполняет анализ сообщений для указанного чата и отправляет результат.
     """
     try:
         logger.info(
-            f"Выполнение анализа для чата {schedule.chat.chat_id} в {analysis_time}.")
-        data = await analyze(schedule, analysis_time)
+            f"Выполнение анализа для чата {schedule.chat.chat_id}.")
+        data = await analyze(schedule)
         analysis_id = await save_analysis_result(data)
 
         if analysis_id:
@@ -50,11 +50,13 @@ async def execute_analysis(schedule: ChatSchedules, analysis_time):
                     logger.info(
                         f"Планируем отправку через {schedule.send_after_minutes} минут — в {send_time}")
                     schedule_sending(schedule, analysis_id, send_time)
+
             else:
                 logger.warning(
                     f"Неизвестная стратегия отправки: {schedule.send_strategy}. Отправляем сразу.")
                 await send_tasks(schedule, analysis_id)
-
+        schedule.last_run_at = datetime.utcnow()
+        await schedule.save()
         logger.info(f"Анализ завершён для чата {schedule.chat.chat_id}.")
 
         metrics.inc_success(
