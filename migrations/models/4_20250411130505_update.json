@@ -1,0 +1,14 @@
+{
+  "upgrade": [
+    "ALTER TABLE \"chat_schedules\" DROP COLUMN \"time_to_send\";",
+    "ALTER TABLE \"chat_schedules\" ADD COLUMN \"time_to_send\" TIME WITH TIME ZONE;",
+    "ALTER TABLE \"chat_schedules\" ADD COLUMN \"send_strategy\" VARCHAR(10) DEFAULT 'fixed';",
+    "ALTER TABLE \"chat_schedules\" ADD COLUMN \"send_after_minutes\" INT;"
+  ],
+  "downgrade": [
+    "ALTER TABLE \"chat_schedules\" DROP COLUMN \"send_strategy\";",
+    "ALTER TABLE \"chat_schedules\" DROP COLUMN \"send_after_minutes\";",
+    "ALTER TABLE \"chat_schedules\" DROP COLUMN \"time_to_send\";",
+    "ALTER TABLE \"chat_schedules\" ADD COLUMN \"time_to_send\" BIGINT;"
+  ]
+}

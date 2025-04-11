@@ -1,4 +1,4 @@
-# from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 from loguru import logger
 from app.scheduler.tasks import analyze, save_analysis_result, send_analysis_result
@@ -15,19 +15,56 @@ async def execute_analysis(schedule: ChatSchedules, analysis_time):
     Выполняет анализ сообщений для указанного чата и отправляет результат.
     """
     try:
-        # Вызов функции анализа (замените на вашу логику)
-        logger.info(f"""Выполнение анализа для чата {
-            schedule.chat.chat_id} в {analysis_time}.""")
+        logger.info(
+            f"Выполнение анализа для чата {schedule.chat.chat_id} в {analysis_time}.")
         data = await analyze(schedule, analysis_time)
         analysis_id = await save_analysis_result(data)
+
         if analysis_id:
-            schedule_sending(schedule, analysis_id)
-        logger.info(
-            f"Анализ завершён для чата {schedule.chat.chat_id}.")
+            now = datetime.now(novosibirsk_tz)
+
+            if schedule.send_strategy == "fixed":
+                send_time_today = now.replace(
+                    hour=schedule.time_to_send.hour,
+                    minute=schedule.time_to_send.minute,
+                    second=0,
+                    microsecond=0
+                )
+
+                if now >= send_time_today:
+                    logger.info(
+                        "Время отправки уже наступило, отправляем результат сразу.")
+                    await send_tasks(schedule, analysis_id)
+                else:
+                    schedule_sending(schedule, analysis_id, send_time_today)
+
+            elif schedule.send_strategy == "relative":
+                if schedule.send_after_minutes is None:
+                    logger.warning(
+                        "send_after_minutes не указано при стратегии 'relative'")
+                    # fallback: отправляем сразу
+                    await send_tasks(schedule, analysis_id)
+                else:
+                    send_time = now + \
+                        timedelta(minutes=schedule.send_after_minutes)
+                    logger.info(
+                        f"Планируем отправку через {schedule.send_after_minutes} минут — в {send_time}")
+                    schedule_sending(schedule, analysis_id, send_time)
+            else:
+                logger.warning(
+                    f"Неизвестная стратегия отправки: {schedule.send_strategy}. Отправляем сразу.")
+                await send_tasks(schedule, analysis_id)
+
+        logger.info(f"Анализ завершён для чата {schedule.chat.chat_id}.")
+
         metrics.inc_success(
             chat_id=str(schedule.chat.chat_id),
             schedule_id=str(schedule.schedule_id)
         )
+
+        if schedule.schedule_type == 'once':
+            await schedule.delete()
+
     except Exception as e:
         logger.error(
             f"Ошибка при выполнении анализа для чата {schedule.chat.chat_id}: {e}")
@@ -37,11 +74,11 @@ async def execute_analysis(schedule: ChatSchedules, analysis_time):
         )
 
 
-def schedule_sending(schedule: ChatSchedules, analysis_id: str):
+def schedule_sending(schedule: ChatSchedules, analysis_id: str, run_at: datetime):
     scheduler.add_job(
         send_tasks,
         trigger="date",
-        run_date=schedule.time_to_send,
+        run_date=run_at,
         args=[schedule, analysis_id],
         id=f"{schedule.schedule_id}_{analysis_id}",
         replace_existing=True
@@ -71,12 +108,12 @@ async def send_tasks(schedule: ChatSchedules, analysis_id: str):
             if analysis:
                 logger.info(f"""Результат анализа найден для чата {
                     chat.chat_id}.""")
-                send_analysis_result(
+                await send_analysis_result(
                     target_chats, chat.chat_name, bot.bot_token, analysis.result_text)
             else:
                 logger.warning(f"""Результат анализа для чата {
                     chat.chat_id} за последние 24 часа не найден.""")
-                send_analysis_result(
+                await send_analysis_result(
                     target_chats, chat.chat_name, bot.bot_token, "Результат анализа не найден.")
             logger.info(f"Задача выполнена для чата {chat.chat_id}.")
         except Exception as e:

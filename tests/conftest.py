@@ -1,5 +1,5 @@
 import pytest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from tortoise import Tortoise
 from app import create_app
 from app.handlers.auth_handlers import create_access_token, create_refresh_token
@@ -8,23 +8,18 @@ from config import Settings
 settings = Settings()
 
 
-@pytest.fixture(scope="session")
-def test_app():
-    """Фикстура для тестового приложения."""
+@pytest.fixture
+async def test_app():
     app = create_app(config_name="Test")
-
-    client = TestClient(app)
-
-    yield client  # Отдаём клиент тестам
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
 
 
 @pytest.fixture(scope="function", autouse=True)
 @pytest.mark.asyncio
-async def setup_db():
-    """Гарантируем, что Tortoise ORM инициализирован перед тестами."""
+async def setup_and_clean_db():
     await Tortoise.init(config={
-        # Используем in-memory базу
-        "connections": {"default": "sqlite://:memory:"},
+        "connections": {"default": settings.TEST_DATABASE_URL},
         "apps": {
             "models": {
                 "models": ["app.database.models"],
@@ -33,8 +28,16 @@ async def setup_db():
         },
     })
     await Tortoise.generate_schemas()
+
+    for model in reversed(list(Tortoise.apps.get("models", {}).values())):
+        try:
+            await model.all().delete()
+        except Exception:
+            pass
+
     yield
     await Tortoise.close_connections()
+
 
 pytest_plugins = [
     "tests.fixtures.main_fixtures",  # Фикстуры, связанные с именами, статусами, ролями

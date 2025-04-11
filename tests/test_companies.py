@@ -12,7 +12,7 @@ async def test_add_company(test_app: AsyncClient, jwt_token_admin):
         "description": "Описание тестовой компании"
     }
 
-    response = test_app.post("/api/companies/add", headers=headers, json=data)
+    response = await test_app.post("/api/companies/add", headers=headers, json=data)
     assert response.status_code == 201, f"Ошибка: {response.status_code}, {response.text}"
 
     data = response.json()
@@ -29,7 +29,7 @@ async def test_edit_company(test_app: AsyncClient, jwt_token_admin, seed_company
         "description": "Обновленное описание"
     }
 
-    response = test_app.patch(
+    response = await test_app.patch(
         f"/api/companies/{seed_company['company_id']}",
         headers=headers,
         json=data
@@ -49,7 +49,7 @@ async def test_view_company(test_app: AsyncClient, jwt_token_admin, seed_company
     """Тест просмотра информации о компании."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.get(
+    response = await test_app.get(
         f"/api/companies/{seed_company['company_id']}",
         headers=headers
     )
@@ -66,7 +66,7 @@ async def test_delete_company(test_app: AsyncClient, jwt_token_admin, seed_compa
     """Тест удаления компании."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.delete(
+    response = await test_app.delete(
         f"/api/companies/{seed_company['company_id']}",
         headers=headers
     )
@@ -83,7 +83,7 @@ async def test_get_companies(test_app: AsyncClient, jwt_token_admin, seed_compan
     """Тест получения списка компаний с фильтрацией."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.get(
+    response = await test_app.get(
         "/api/companies/all",
         headers=headers
     )

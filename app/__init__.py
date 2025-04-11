@@ -20,21 +20,18 @@ def create_app(config_name='Development') -> FastAPI:
     )
 
     setup_logger()
-    if config_name == 'Test':
-        db_url = settings.TEST_DATABASE_URL
-    elif config_name == 'Development':
+    if config_name != 'Test':
+
         init_tracer(app)
         db_url = settings.DATABASE_URL
-    else:
-        db_url = settings.DATABASE_URL
 
-    register_tortoise(
-        app,
-        db_url=db_url,
-        modules={"models": ["app.database.models"]},
-        generate_schemas=(config_name == 'Test'),
-        add_exception_handlers=True,
-    )
+        register_tortoise(
+            app,
+            db_url=db_url,
+            modules={"models": ["app.database.models"]},
+            generate_schemas=(config_name == 'Test'),
+            add_exception_handlers=True,
+        )
 
     register_routes(app)
 

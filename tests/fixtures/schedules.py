@@ -1,5 +1,4 @@
 import datetime
-import time
 import pytest
 from app.database.models import (
     ChatSchedules,
@@ -26,7 +25,8 @@ async def seed_schedule(seed_prompt, seed_chat, seed_company, seed_bot):
         schedule_type="once",
         run_at=datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
         enabled=True,
-        time_to_send=int(time.time()) + 300,
+        send_strategy="fixed",
+        time_to_send="16:30:00",
         company=company,
         bot=bot
     )

@@ -21,7 +21,7 @@ async def seed_chat_account_role_data():
 @pytest.mark.asyncio
 async def test_get_chats(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    response = test_app.get("/api/chats/all", headers=headers)
+    response = await test_app.get("/api/chats/all", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 2
@@ -31,7 +31,7 @@ async def test_get_chats(seed_chat_account_role_data, test_app: AsyncClient, jwt
 @pytest.mark.asyncio
 async def test_get_accounts(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    response = test_app.get("/api/accounts/all", headers=headers)
+    response = await test_app.get("/api/accounts/all", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 2
@@ -41,7 +41,7 @@ async def test_get_accounts(seed_chat_account_role_data, test_app: AsyncClient, 
 @pytest.mark.asyncio
 async def test_get_user_roles_new(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    response = test_app.get("/api/user-roles/all", headers=headers)
+    response = await test_app.get("/api/user-roles/all", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 2
@@ -54,12 +54,12 @@ async def test_chat_filtering_sorting(seed_chat_account_role_data, test_app: Asy
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
     # Фильтрация
-    response = test_app.get("/api/chats/all?chat_name=Чат 1", headers=headers)
+    response = await test_app.get("/api/chats/all?chat_name=Чат 1", headers=headers)
     assert response.status_code == 200
     assert response.json()["total"] == 1
 
     # Сортировка по убыванию
-    response = test_app.get(
+    response = await test_app.get(
         "/api/chats/all?sort_by=chat_name&order=desc", headers=headers)
     assert response.status_code == 200
     names = [c["chat_name"] for c in response.json()["chats"]]
@@ -69,7 +69,7 @@ async def test_chat_filtering_sorting(seed_chat_account_role_data, test_app: Asy
 @pytest.mark.asyncio
 async def test_account_pagination(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    response = test_app.get(
+    response = await test_app.get(
         "/api/accounts/all?page=1&page_size=1", headers=headers)
     assert response.status_code == 200
     assert len(response.json()["accounts"]) == 1
@@ -79,7 +79,7 @@ async def test_account_pagination(seed_chat_account_role_data, test_app: AsyncCl
 @pytest.mark.asyncio
 async def test_get_permissions(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    response = test_app.get("/api/permissions/all", headers=headers)
+    response = await test_app.get("/api/permissions/all", headers=headers)
     assert response.status_code == 200
 
     data = response.json()
@@ -92,7 +92,7 @@ async def test_get_permissions(seed_chat_account_role_data, test_app: AsyncClien
 async def test_filter_permissions_by_role_name(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.get(
+    response = await test_app.get(
         "/api/permissions/all?role_name=Админ", headers=headers)
     assert response.status_code == 200
 
@@ -105,7 +105,7 @@ async def test_filter_permissions_by_role_name(seed_chat_account_role_data, test
 async def test_permission_pagination(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.get(
+    response = await test_app.get(
         "/api/permissions/all?page=1&page_size=1", headers=headers)
     assert response.status_code == 200
 

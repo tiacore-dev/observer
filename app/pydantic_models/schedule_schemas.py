@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Literal
 import datetime
 from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseModel, Field, UUID4, field_validator, model_validator
@@ -15,12 +15,15 @@ class ScheduleCreateSchema(BaseModel):
     time_of_day: Optional[datetime.time] = Field(None)
     cron_expression: Optional[str] = Field(None)
     run_at: Optional[datetime.datetime] = Field(None)
-
+    company: UUID4 = Field(...)
     target_chats: List[int] = Field(...)
     bot: int = Field(...)
     enabled: Optional[bool] = True
-    time_to_send: int = Field(...)
-    company: UUID4 = Field(...)
+    send_strategy: Literal["fixed", "relative"] = Field(
+        ..., description="fixed — в указанное время, relative — через X минут после анализа"
+    )
+    time_to_send: Optional[datetime.time] = Field(None)
+    send_after_minutes: Optional[int] = Field(None)
 
     @field_validator("cron_expression")
     @classmethod
@@ -34,25 +37,32 @@ class ScheduleCreateSchema(BaseModel):
 
     @model_validator(mode="after")
     def validate_required_fields(self):
+        # Валидация типа расписания
         match self.schedule_type:
             case "interval":
                 if self.interval_hours is None and self.interval_minutes is None:
                     raise ValueError(
                         "Для типа interval необходимо указать interval_hours или interval_minutes")
-
             case "daily_time":
                 if self.time_of_day is None:
                     raise ValueError(
                         "Для типа daily_time необходимо указать time_of_day")
-
             case "cron":
                 if self.cron_expression is None:
                     raise ValueError(
                         "Для типа cron необходимо указать cron_expression")
-
             case "once":
                 if self.run_at is None:
                     raise ValueError("Для типа once необходимо указать run_at")
+
+        # Валидация стратегии отправки
+        if self.send_strategy == "fixed" and not self.time_to_send:
+            raise ValueError(
+                "Для стратегии 'fixed' необходимо указать time_to_send")
+
+        if self.send_strategy == "relative" and self.send_after_minutes is None:
+            raise ValueError(
+                "Для стратегии 'relative' необходимо указать send_after_minutes")
 
         return self
 
@@ -72,7 +82,9 @@ class ScheduleEditSchema(BaseModel):
     removed_chats: Optional[List[int]] = Field(None)
     bot: Optional[int] = Field(None)
     enabled: Optional[bool] = Field(None)
-    time_to_send: Optional[int] = Field(None)
+    send_strategy: Optional[Literal["fixed", "relative"]] = Field(None)
+    time_to_send: Optional[datetime.time] = Field(None)
+    send_after_minutes: Optional[int] = Field(None)
     company: Optional[UUID4] = Field(None)
 
     @field_validator("cron_expression")
@@ -87,6 +99,7 @@ class ScheduleEditSchema(BaseModel):
 
     @model_validator(mode="after")
     def validate_schedule_edit(self):
+        # Тип расписания
         if self.schedule_type == "interval" and not (self.interval_hours or self.interval_minutes):
             raise ValueError(
                 "Для типа interval нужно указать interval_hours или interval_minutes")
@@ -100,6 +113,15 @@ class ScheduleEditSchema(BaseModel):
         if self.schedule_type == "once" and not self.run_at:
             raise ValueError("Для типа once нужно указать run_at")
 
+        # Стратегия отправки
+        if self.send_strategy == "fixed" and not self.time_to_send:
+            raise ValueError(
+                "Для стратегии 'fixed' необходимо указать time_to_send")
+
+        if self.send_strategy == "relative" and self.send_after_minutes is None:
+            raise ValueError(
+                "Для стратегии 'relative' необходимо указать send_after_minutes")
+
         return self
 
 
@@ -110,16 +132,18 @@ class ScheduleSchema(BaseModel):
     company: UUID4
     schedule_type: str
 
-    interval_hours: Optional[int]
-    interval_minutes: Optional[int]
-    time_of_day: Optional[datetime.time]
-    cron_expression: Optional[str]
-    run_at: Optional[datetime.datetime]
+    interval_hours: Optional[int] = None
+    interval_minutes: Optional[int] = None
+    time_of_day: Optional[datetime.time] = None
+    cron_expression: Optional[str] = None
+    run_at: Optional[datetime.datetime] = None
 
     enabled: bool
-    last_run_at: Optional[datetime.datetime]
+    last_run_at: Optional[datetime.datetime] = None
     created_at: datetime.datetime
-    time_to_send: int
+    send_strategy: str
+    time_to_send: Optional[datetime.time] = None
+    send_after_minutes: Optional[int] = None
 
     bot: int
 

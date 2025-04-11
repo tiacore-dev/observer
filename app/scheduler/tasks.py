@@ -101,7 +101,8 @@ async def save_analysis_result(data):
     """
     Сохраняет результат анализа в базу данных.
     """
-    logger.info(f"Сохранение результата анализа для чата {data['chat_id']}.")
+    logger.info(
+        f"Сохранение результата анализа для чата {data['chat'].chat_id}.")
 
     if data["analysis_result"]:
         analysis = await AnalysisResult.create(
@@ -109,13 +110,15 @@ async def save_analysis_result(data):
             chat=data['chat'],
             result_text=data["analysis_result"],
             tokens_input=data["tokens_input"],
-            tokens_outpu=data["tokens_output"],
+            tokens_output=data["tokens_output"],
             schedule=data['schedule']
         )
-        logger.info(f"Результат анализа сохранён для чата {data['chat_id']}.")
+        logger.info(
+            f"Результат анализа сохранён для чата {data['chat'].chat_id}.")
         return analysis.analysis_id
     else:
-        logger.info(f"Для чата {data['chat_id']} нет анализа для сохранения.")
+        logger.info(
+            f"Для чата {data['chat'].chat_id} нет анализа для сохранения.")
 
 
 async def send_analysis_result(target_chats: list[Chats], chat_name, bot_token, analysis_result):

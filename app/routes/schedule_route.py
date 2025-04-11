@@ -1,5 +1,4 @@
 from uuid import UUID
-import datetime
 from fastapi import APIRouter, Depends,  HTTPException, Body, status
 from loguru import logger
 from tortoise.expressions import Q
@@ -41,6 +40,7 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
         raise HTTPException(
             status_code=404, detail="Компания, чат или промпт не найдены")
     try:
+
         schedule = await ChatSchedules.create(
             prompt=prompt,
             chat=chat,
@@ -52,6 +52,8 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
             run_at=data.run_at,
             enabled=data.enabled,
             time_to_send=data.time_to_send,
+            send_after_minutes=data.send_after_minutes,
+            send_strategy=data.send_strategy,
             company=company,
             bot=bot
         )
@@ -77,7 +79,7 @@ async def toggle_schedule(schedule_id: UUID, admin: Users = Depends(get_current_
     schedule.enabled = not schedule.enabled
     await schedule.save()
     if schedule.enabled:
-        add_schedule_job(schedule_id)
+        add_schedule_job(schedule)
     else:
         remove_schedule_job(schedule_id)
 
@@ -113,19 +115,9 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
         updated_data['bot'] = bot
 
 # временно вырезаем time_of_day, чтобы вручную вставить строкой
-    time_of_day_value = updated_data.pop("time_of_day", None)
-    schedule = schedule.update_from_dict(updated_data)
-
-    if time_of_day_value:
-        if isinstance(time_of_day_value, datetime.time):
-            # SQLite не любит time — сериализуем вручную
-            time_of_day_value = time_of_day_value.isoformat()
-        schedule.time_of_day = time_of_day_value
-
-    await schedule.save()
 
     try:
-        schedule = schedule.update_from_dict(updated_data)
+        schedule.update_from_dict(updated_data)
         await schedule.save()
 
         if not schedule:
@@ -133,7 +125,7 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
             raise HTTPException(
                 status_code=404, detail="Расписание не найдено")
         if schedule.enabled:
-            add_schedule_job(schedule_id)
+            add_schedule_job(schedule)
         logger.success(f"Расписание {schedule_id} успешно обновлено")
         if data.target_chats:
             # Привязываем чаты к расписанию
@@ -189,9 +181,6 @@ async def get_schedules(
         if filters.get("enabled") is not None:
             query &= Q(enabled=filters["enabled"])
 
-        if filters.get("schedule_type"):
-            query &= Q(schedule_type=filters["schedule_type"])
-
         order_by = f"{'-' if filters.get('order') == 'desc' else ''}{filters.get('sort_by', 'created_at')}"
         page = filters.get("page", 1)
         page_size = filters.get("page_size", 10)
@@ -209,6 +198,7 @@ async def get_schedules(
             "chat_id",
             "created_at",
             "bot_id"
+
         )
 
         return ScheduleListSchema(
@@ -253,6 +243,8 @@ async def get_schedule(schedule_id: UUID, admin: Users = Depends(get_current_use
         run_at=schedule.run_at,
         enabled=schedule.enabled,
         time_to_send=schedule.time_to_send,
+        send_after_minutes=schedule.send_after_minutes,
+        send_strategy=schedule.send_strategy,
         company=schedule.company.company_id,
         created_at=schedule.created_at,
         last_run_at=schedule.last_run_at,

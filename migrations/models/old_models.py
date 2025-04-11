@@ -232,7 +232,10 @@ class ChatSchedules(Model):
 
     created_at = fields.DatetimeField(auto_now_add=True)
 
-    time_to_send = fields.BigIntField()
+    send_strategy = fields.CharField(
+        max_length=10, default="fixed")  # fixed или relative
+    send_after_minutes = fields.IntField(null=True)
+    time_to_send = fields.TimeField(null=True)
 
     bot = fields.ForeignKeyField("diff_models.Bots", related_name="schedules")
 

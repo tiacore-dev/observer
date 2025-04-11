@@ -6,7 +6,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_login_success(test_app):
     """Проверяем успешную аутентификацию."""
-    response = test_app.post(
+    response = await test_app.post(
         "/auth/token",
         json={"username": "admin", "password": "qweasdzcx"}
     )
@@ -20,7 +20,7 @@ async def test_login_success(test_app):
 @pytest.mark.asyncio
 async def test_refresh_token_success(test_app, jwt_token_admin):
     """Проверяем, что refresh-токен можно обменять на новый access-токен."""
-    response = test_app.post(
+    response = await test_app.post(
         "/auth/refresh", data=json.dumps({"refresh_token": jwt_token_admin["refresh_token"]}))
 
     assert response.status_code == 200
@@ -32,7 +32,7 @@ async def test_refresh_token_success(test_app, jwt_token_admin):
 @pytest.mark.asyncio
 async def test_login_failure(test_app):
     """Проверяем неудачную аутентификацию с неправильным паролем."""
-    response = test_app.post(
+    response = await test_app.post(
         "/auth/token",
         json={"username": "test_user", "password": "wrongpassword"}
     )
@@ -44,7 +44,7 @@ async def test_login_failure(test_app):
 @pytest.mark.asyncio
 async def test_refresh_token_invalid(test_app):
     """Проверяем обновление токена с неверным refresh-токеном."""
-    response = test_app.post(
+    response = await test_app.post(
         "/auth/refresh", data=json.dumps({"refresh_token": "invalid_token"}))
 
     assert response.status_code == 401

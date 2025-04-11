@@ -13,7 +13,7 @@ async def test_add_prompt(test_app: AsyncClient, jwt_token_admin, seed_company):
         "company": seed_company['company_id']
     }
 
-    response = test_app.post("/api/prompts/add", headers=headers, json=data)
+    response = await test_app.post("/api/prompts/add", headers=headers, json=data)
     assert response.status_code == 201, f"Ошибка: {response.status_code}, {response.text}"
 
     response_data = response.json()
@@ -31,7 +31,7 @@ async def test_edit_prompt(test_app: AsyncClient, jwt_token_admin, seed_prompt):
         "prompt_name": "Updated Prompt"
     }
 
-    response = test_app.patch(
+    response = await test_app.patch(
         f"/api/prompts/{seed_prompt['prompt_id']}",
         headers=headers,
         json=data
@@ -50,7 +50,7 @@ async def test_view_prompt(test_app: AsyncClient, jwt_token_admin, seed_prompt):
     """Тест просмотра промпта по ID."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.get(
+    response = await test_app.get(
         f"/api/prompts/{seed_prompt['prompt_id']}",
         headers=headers
     )
@@ -67,7 +67,7 @@ async def test_delete_prompt(test_app: AsyncClient, jwt_token_admin, seed_prompt
     """Тест удаления промпта."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.delete(
+    response = await test_app.delete(
         f"/api/prompts/{seed_prompt['prompt_id']}",
         headers=headers
     )
@@ -83,7 +83,7 @@ async def test_get_prompts(test_app: AsyncClient, jwt_token_admin, seed_prompt):
     """Тест получения списка промптов с фильтрацией."""
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response = test_app.get(
+    response = await test_app.get(
         "/api/prompts/all",
         headers=headers
     )
