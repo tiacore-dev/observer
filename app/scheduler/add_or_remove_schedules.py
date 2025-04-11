@@ -7,6 +7,17 @@ from app.scheduler.executors import execute_analysis
 def add_schedule_job(sched: ChatSchedules):
     job_id = f"{sched.schedule_id}"
 
+    logger.debug(
+        f"""Создаём задачу:
+        ├─ ID: {job_id}
+        ├─ Тип: {sched.schedule_type}
+        ├─ Активно: {sched.enabled}
+        ├─ Период: hours={sched.interval_hours}, minutes={sched.interval_minutes}
+        ├─ Time of day: {sched.time_of_day}
+        ├─ Cron: {sched.cron_expression}
+        └─ Once: {sched.run_at}"""
+    )
+
     if sched.schedule_type == "daily_time":
         scheduler.add_job(
             execute_analysis,
@@ -50,12 +61,13 @@ def add_schedule_job(sched: ChatSchedules):
             replace_existing=True
         )
 
-    logger.info(f"Задача добавлена: {job_id} ({sched.schedule_type})")
+    logger.success(
+        f"🗓️ Задача {job_id} ({sched.schedule_type}) добавлена в планировщик.")
 
 
 def remove_schedule_job(schedule_id: str):
     try:
         scheduler.remove_job(schedule_id)
-        logger.info(f"Задача {schedule_id} успешно удалена из планировщика.")
+        logger.info(f"🗑️ Задача {schedule_id} удалена из планировщика.")
     except Exception as e:
-        logger.warning(f"Не удалось удалить задачу {schedule_id}: {e}")
+        logger.warning(f"⚠️ Не удалось удалить задачу {schedule_id}: {e}")

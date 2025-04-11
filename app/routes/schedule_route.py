@@ -4,6 +4,7 @@ from loguru import logger
 from tortoise.expressions import Q
 from app.handlers.auth_handlers import get_current_user
 from app.scheduler.add_or_remove_schedules import add_schedule_job, remove_schedule_job
+from app.scheduler.scheduler import list_scheduled_jobs
 from app.database.models import (
     ChatSchedules,
     Users,
@@ -63,6 +64,7 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
             for chat_id in data.target_chats:
                 await TargetChats.create(schedule=schedule, chat_id=chat_id)
         add_schedule_job(schedule)
+        list_scheduled_jobs()
         return ScheduleResponseSchema(schedule_id=schedule.schedule_id)
 
     except Exception as e:
@@ -137,7 +139,7 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
             for chat_id in data.removed_chats:
                 chat = await Chats.get_or_none(chat_id=chat_id)
                 await TargetChats.filter(schedule=schedule, chat=chat).delete()
-
+        list_scheduled_jobs()
         return ScheduleResponseSchema(schedule_id=schedule.schedule_id)
 
     except Exception as e:
