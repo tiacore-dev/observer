@@ -25,8 +25,9 @@ def create_app(config_name='Development') -> FastAPI:
         db_url = settings.TEST_DATABASE_URL
     elif config_name == 'Development':
         print("⚙️  Mounting /metrics")
-        metrics_app = make_asgi_app()
-        app.router.routes.append(Mount("/metrics", app=metrics_app))
+        app.router.routes.append(
+            Mount("/metrics", app=make_asgi_app())
+        )
         init_tracer(app)
         db_url = settings.DATABASE_URL
     else:
