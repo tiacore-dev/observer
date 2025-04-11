@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from prometheus_client import make_asgi_app
+from starlette.routing import Mount
 from metrics.logger import setup_logger
 from metrics.tracer import init_tracer
 from app.routes import register_routes
@@ -24,7 +25,8 @@ def create_app(config_name='Development') -> FastAPI:
         db_url = settings.TEST_DATABASE_URL
     elif config_name == 'Development':
         print("⚙️  Mounting /metrics")
-        app.mount("/metrics", make_asgi_app())
+        metrics_app = make_asgi_app()
+        app.router.routes.append(Mount("/metrics", app=metrics_app))
         init_tracer(app)
         db_url = settings.DATABASE_URL
     else:

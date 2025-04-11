@@ -68,6 +68,20 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
 
 
+@schedule_router.patch("/{schedule_id}/toggle",  status_code=status.HTTP_204_NO_CONTENT)
+async def toggle_schedule(schedule_id: UUID, admin: Users = Depends(get_current_user)):
+    schedule = await ChatSchedules.get_or_none(schedule_id=schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Расписание не найдено")
+
+    schedule.enabled = not schedule.enabled
+    await schedule.save()
+    if schedule.enabled:
+        add_schedule_job(schedule_id)
+    else:
+        remove_schedule_job(schedule_id)
+
+
 @schedule_router.patch("/{schedule_id}", response_model=ScheduleResponseSchema)
 async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...), admin: Users = Depends(get_current_user)):
     updated_data = data.model_dump(exclude_unset=True)
