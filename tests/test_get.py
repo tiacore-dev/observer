@@ -113,7 +113,7 @@ async def test_permission_pagination(seed_chat_account_role_data, test_app: Asyn
     assert data["total"] == 2
     assert len(data["permissions"]) == 1
 
-    response2 = test_app.get(
+    response2 = await test_app.get(
         "/api/permissions/all?page=2&page_size=1", headers=headers)
     assert response2.status_code == 200
     assert len(response2.json()["permissions"]) == 1
@@ -123,9 +123,9 @@ async def test_permission_pagination(seed_chat_account_role_data, test_app: Asyn
 async def test_permission_sorting(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
-    response_asc = test_app.get(
+    response_asc = await test_app.get(
         "/api/permissions/all?sort_by=role__role_name&order=asc", headers=headers)
-    response_desc = test_app.get(
+    response_desc = await test_app.get(
         "/api/permissions/all?sort_by=role__role_name&order=desc", headers=headers)
 
     names_asc = [p["role_name"] for p in response_asc.json()["permissions"]]
