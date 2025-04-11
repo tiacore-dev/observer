@@ -135,6 +135,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOF
             cd $DEPLOY_PATH || exit 1
             export TAG=\$(grep ^TAG .env | cut -d '=' -f2)
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
 
             set -e
 
@@ -144,11 +145,12 @@ jobs:
               -e PYTHONPATH=/app \
               -e TORTOISE_ORM=app.database.config.TORTOISE_ORM \
               --network observer_network \
-              $DOCKERHUB_USERNAME/observer-backend:\$TAG aerich upgrade || {
+              \$DOCKERHUB_USERNAME/observer-backend:\$TAG aerich upgrade || {
                 echo "⚠️ Aerich завершился с ошибкой"
                 exit 1
             }
           EOF
+
 
 
       - name: 🚀 Start Backend
