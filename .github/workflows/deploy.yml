@@ -138,15 +138,16 @@ jobs:
 
             set -e
 
-            if docker compose -f docker-compose.app.yml run --rm aerich; then
-              echo "✅ Миграции применены или не требовались"
-            else
-              echo "⚠️ Aerich завершился с ошибкой"
-              echo "🔍 Вот что он сказал:"
-              docker compose -f docker-compose.app.yml logs aerich || true
-            fi
-
-
+            docker run --rm \
+              -v \$(pwd):/app \
+              -v \$(pwd)/.env:/app/.env \
+              -e PYTHONPATH=/app \
+              -e TORTOISE_ORM=app.database.config.TORTOISE_ORM \
+              --network observer_network \
+              $DOCKERHUB_USERNAME/observer-backend:\$TAG aerich upgrade || {
+                echo "⚠️ Aerich завершился с ошибкой"
+                exit 1
+            }
           EOF
 
 
