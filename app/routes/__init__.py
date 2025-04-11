@@ -6,6 +6,7 @@ from .schedule_route import schedule_router
 from .analyze_route import analyze_router
 from .company_route import company_router
 from .monitoring_route import monitoring_router
+from .get_route import get_router
 
 
 def register_routes(app):
@@ -22,3 +23,4 @@ def register_routes(app):
     app.include_router(
         company_router, prefix="/api/companies", tags=["Companies"])
     app.include_router(monitoring_router, tags=["Monitoring"])
+    app.include_router(get_router, prefix="/api", tags=["Get"])

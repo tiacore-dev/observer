@@ -6,6 +6,8 @@ from app.scheduler.scheduler import start_scheduler
 
 load_dotenv()
 
+
+MAIN_PROCESS_PID = os.getpid()  # сохраняем PID до запуска Gunicorn
 # Порт и биндинг
 PORT = 8000
 
@@ -43,6 +45,9 @@ async def create_admin():
 
 @app.on_event("startup")
 async def startup_event():
+    print(f"🧠 Startup in PID {os.getpid()}, main PID is {MAIN_PROCESS_PID}")
+    if os.getpid() != MAIN_PROCESS_PID:
+        return  # не главный процесс — пропускаем
     # Создаем администратора при запуске
     await create_admin()
     await start_scheduler()
