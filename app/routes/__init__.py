@@ -3,7 +3,7 @@ from .bot_route import bot_router
 from .prompt_route import prompt_router
 from .webhook_route import webhook_router
 from .schedule_route import schedule_router
-from .analyze_route import analyze_router
+from .analysis_route import analysis_router
 from .company_route import company_router
 from .monitoring_route import monitoring_router
 from .get_route import get_router
@@ -19,7 +19,7 @@ def register_routes(app):
     app.include_router(
         schedule_router, prefix="/api/schedules", tags=["Schedules"])
     app.include_router(
-        analyze_router, prefix="/api/analysis", tags=["Analysis"])
+        analysis_router, prefix="/api/analysis", tags=["Analysis"])
     app.include_router(
         company_router, prefix="/api/companies", tags=["Companies"])
     app.include_router(monitoring_router, tags=["Monitoring"])

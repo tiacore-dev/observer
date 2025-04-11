@@ -31,12 +31,22 @@ class AnalysisSchema(BaseModel):
     send_time: Optional[int]
 
 
+class AnalysisShortSchema(BaseModel):
+    analysis_id: UUID4
+    prompt: UUID4
+    chat: int
+    company: UUID4
+    created_at: datetime.datetime
+    tokens_input: int
+    tokens_output: int
+
+
 class AnalysisListSchema(BaseModel):
     total: int
-    analysis: List[AnalysisSchema]
+    analysis: List[AnalysisShortSchema]
 
 
-def schedule_filter_params(
+def analysis_filter_params(
     company: Optional[UUID4] = Query(None),
     chat: Optional[UUID4] = Query(None),
     schedule: Optional[UUID4] = Query(None),
