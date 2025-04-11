@@ -52,7 +52,13 @@ jobs:
             --cache-to=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache,mode=max \
             --load \
             -t observer-backend-test .
-          docker run --rm --env-file .env.test observer-backend-test pytest --maxfail=3 --disable-warnings
+          docker run \
+            --rm \
+            --add-host=host.docker.internal:host-gateway \
+            --env-file .env.test \
+            observer-backend-test \
+            pytest --maxfail=3 --disable-warnings
+
 
 
       - name: Log in to Docker Hub
