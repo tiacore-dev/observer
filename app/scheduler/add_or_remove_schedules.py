@@ -110,11 +110,11 @@ def add_schedule_job(sched: ChatSchedules):
         f"🗓️ Задача {job_id} ({sched.schedule_type}) добавлена в планировщик.")
 
 
-def remove_schedule_job(schedule_id: str):
+def remove_schedule_job(schedule_id):
     try:
-        job = scheduler.get_job(schedule_id)
+        job = scheduler.get_job(str(schedule_id))
         if job:
-            scheduler.remove_job(schedule_id)
+            scheduler.remove_job(str(schedule_id))
             logger.info(f"🗑️ Задача {schedule_id} удалена из планировщика.")
         else:
             logger.warning(
