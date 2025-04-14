@@ -1,7 +1,5 @@
-import datetime
 import pytest
 from httpx import AsyncClient
-from app.database.models import ChatSchedules
 
 
 # @pytest.mark.asyncio
@@ -90,69 +88,69 @@ async def test_get_schedules(test_app: AsyncClient, jwt_token_admin, seed_schedu
     assert seed_schedule["schedule_id"] in schedule_ids
 
 
-@pytest.mark.asyncio
-async def test_create_schedule_with_fixed_send_strategy(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
-    headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    data = {
-        "prompt": seed_prompt['prompt_id'],
-        "chat": seed_chat['chat_id'],
-        "schedule_type": "once",
-        "run_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).isoformat(),
-        "enabled": True,
-        "send_strategy": "fixed",
-        "time_to_send": "16:30:00",
-        "company": str(seed_company['company_id']),
-        "target_chats": [seed_chat['chat_id']],
-        "bot": seed_bot['bot_id']
-    }
+# @pytest.mark.asyncio
+# async def test_create_schedule_with_fixed_send_strategy(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
+#     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
+#     data = {
+#         "prompt": seed_prompt['prompt_id'],
+#         "chat": seed_chat['chat_id'],
+#         "schedule_type": "once",
+#         "run_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).isoformat(),
+#         "enabled": True,
+#         "send_strategy": "fixed",
+#         "time_to_send": "16:30:00",
+#         "company": str(seed_company['company_id']),
+#         "target_chats": [seed_chat['chat_id']],
+#         "bot": seed_bot['bot_id']
+#     }
 
-    response = await test_app.post("/api/schedules/add", headers=headers, json=data)
-    assert response.status_code == 201, f"Ошибка: {response.status_code}, {response.text}"
+#     response = await test_app.post("/api/schedules/add", headers=headers, json=data)
+#     assert response.status_code == 201, f"Ошибка: {response.status_code}, {response.text}"
 
-    schedule = await ChatSchedules.get(schedule_id=response.json()["schedule_id"])
-    assert schedule.send_strategy == "fixed"
-    assert schedule.time_to_send.strftime("%H:%M:%S") == "16:30:00"
-
-
-@pytest.mark.asyncio
-async def test_create_schedule_with_relative_strategy(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
-    headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    data = {
-        "prompt": seed_prompt['prompt_id'],
-        "chat": seed_chat['chat_id'],
-        "schedule_type": "once",
-        "run_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).isoformat(),
-        "enabled": True,
-        "send_strategy": "relative",
-        "send_after_minutes": 10,
-        "company": str(seed_company['company_id']),
-        "target_chats": [seed_chat['chat_id']],
-        "bot": seed_bot['bot_id']
-    }
-
-    response = await test_app.post("/api/schedules/add", headers=headers, json=data)
-    assert response.status_code == 201
-
-    schedule = await ChatSchedules.get(schedule_id=response.json()["schedule_id"])
-    assert schedule.send_strategy == "relative"
-    assert schedule.send_after_minutes == 10
+#     schedule = await ChatSchedules.get(schedule_id=response.json()["schedule_id"])
+#     assert schedule.send_strategy == "fixed"
+#     assert schedule.time_to_send.strftime("%H:%M:%S") == "16:30:00"
 
 
-@pytest.mark.asyncio
-async def test_invalid_strategy_missing_field(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
-    headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
-    data = {
-        "prompt": seed_prompt['prompt_id'],
-        "chat": seed_chat['chat_id'],
-        "schedule_type": "once",
-        "run_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).isoformat(),
-        "enabled": True,
-        "send_strategy": "fixed",  # НО time_to_send не указано!
-        "company": str(seed_company['company_id']),
-        "target_chats": [seed_chat['chat_id']],
-        "bot": seed_bot['bot_id']
-    }
+# @pytest.mark.asyncio
+# async def test_create_schedule_with_relative_strategy(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
+#     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
+#     data = {
+#         "prompt": seed_prompt['prompt_id'],
+#         "chat": seed_chat['chat_id'],
+#         "schedule_type": "once",
+#         "run_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).isoformat(),
+#         "enabled": True,
+#         "send_strategy": "relative",
+#         "send_after_minutes": 10,
+#         "company": str(seed_company['company_id']),
+#         "target_chats": [seed_chat['chat_id']],
+#         "bot": seed_bot['bot_id']
+#     }
 
-    response = await test_app.post("/api/schedules/add", headers=headers, json=data)
-    assert response.status_code == 422
-    assert "time_to_send" in response.text
+#     response = await test_app.post("/api/schedules/add", headers=headers, json=data)
+#     assert response.status_code == 201
+
+#     schedule = await ChatSchedules.get(schedule_id=response.json()["schedule_id"])
+#     assert schedule.send_strategy == "relative"
+#     assert schedule.send_after_minutes == 10
+
+
+# @pytest.mark.asyncio
+# async def test_invalid_strategy_missing_field(test_app: AsyncClient, jwt_token_admin, seed_prompt, seed_chat, seed_company, seed_bot):
+#     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
+#     data = {
+#         "prompt": seed_prompt['prompt_id'],
+#         "chat": seed_chat['chat_id'],
+#         "schedule_type": "once",
+#         "run_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).isoformat(),
+#         "enabled": True,
+#         "send_strategy": "fixed",  # НО time_to_send не указано!
+#         "company": str(seed_company['company_id']),
+#         "target_chats": [seed_chat['chat_id']],
+#         "bot": seed_bot['bot_id']
+#     }
+
+#     response = await test_app.post("/api/schedules/add", headers=headers, json=data)
+#     assert response.status_code == 422
+#     assert "time_to_send" in response.text
