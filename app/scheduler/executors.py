@@ -69,7 +69,9 @@ async def execute_analysis(schedule: ChatSchedules):
         )
 
         if schedule.schedule_type == 'once':
-            await schedule.delete()
+            schedule.enabled = False
+            await schedule.save()
+            logger.info(f"🧹 Расписание {schedule.schedule_id} деактивировано.")
 
     except Exception as e:
         logger.error(
@@ -91,12 +93,15 @@ def schedule_sending(schedule: ChatSchedules, analysis_id: str, run_at: datetime
     )
 
 
-async def send_tasks(schedule: ChatSchedules, analysis_id: str):
+async def send_tasks(schedule: ChatSchedules, analysis_id):
     """
     Проверяет задачи, запланированные на текущий час, и выполняет их.
     """
 
     logger.info(f"Отправка анализа по расписания: {schedule.schedule_id}.")
+    logger.debug(
+        f"📨 Получили analysis_id: {analysis_id} — тип: {type(analysis_id)}")
+
     try:
         # Получение всех чатов с активным расписанием
         chat = await Chats.get_or_none(chat_id=schedule.chat.chat_id)

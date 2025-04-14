@@ -236,14 +236,14 @@ class ChatSchedules(Model):
         max_length=10, default="fixed")  # fixed или relative
     send_after_minutes = fields.IntField(null=True)
     time_to_send = fields.TimeField(null=True)
+    company = fields.ForeignKeyField(
+        "models.Companies", related_name="schedules")
 
     bot = fields.ForeignKeyField("models.Bots", related_name="schedules")
 
     @property
     def created_at_ts(self):
         return int(self.created_at.timestamp())
-    company = fields.ForeignKeyField(
-        "models.Companies", related_name="schedules")
 
     def __repr__(self):
         return f"<ChatSchedules(schedule_id={self.schedule_id}, chat={self.chat.chat_id}, type='{self.schedule_type}')>"
@@ -283,8 +283,8 @@ class AnalysisResult(Model):
     created_at = fields.DatetimeField(auto_now_add=True)
 
     # Разворачиваем фильтры:
-    date_from = fields.BigIntField()
-    date_to = fields.BigIntField()
+    date_from = fields.DatetimeField()
+    date_to = fields.DatetimeField()
 
     tokens_input = fields.IntField()
     tokens_output = fields.IntField()

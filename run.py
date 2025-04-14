@@ -11,16 +11,16 @@ MAIN_PROCESS_PID = os.getpid()  # сохраняем PID до запуска Gun
 # Порт и биндинг
 PORT = 8000
 
-app = create_app(config_name='Development')
+CONFIG_NAME = os.getenv('CONFIG_NAME')
 
-for route in app.routes:
-    print("🛣️", route.path, "→", getattr(route, "endpoint", None))
+app = create_app(config_name=CONFIG_NAME)
 
 
 async def create_admin():
     try:
         user = await Users.get_or_none(username="admin")
         if user:
+            print("Админ уже существует")
             return
         role = await UserRoles.create(role_name="Администратор")
         company = await Companies.create(company_name="Tiacore")

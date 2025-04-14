@@ -1,0 +1,10 @@
+{
+  "upgrade": [
+    "ALTER TABLE \"analysis_results\" ALTER COLUMN \"date_from\" TYPE TIMESTAMPTZ USING to_timestamp(date_from)",
+    "ALTER TABLE \"analysis_results\" ALTER COLUMN \"date_to\" TYPE TIMESTAMPTZ USING to_timestamp(date_to)"
+  ],
+  "downgrade": [
+    "ALTER TABLE \"analysis_results\" ALTER COLUMN \"date_from\" TYPE BIGINT USING EXTRACT(EPOCH FROM date_from)",
+    "ALTER TABLE \"analysis_results\" ALTER COLUMN \"date_to\" TYPE BIGINT USING EXTRACT(EPOCH FROM date_to)"
+  ]
+}

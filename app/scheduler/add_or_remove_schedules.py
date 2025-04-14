@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import asyncio
 from loguru import logger
 from app.database.models import ChatSchedules
 from app.scheduler.init_scheduler import scheduler
@@ -83,10 +84,14 @@ def add_schedule_job(sched: ChatSchedules):
             logger.warning(
                 f"⚠️ Задача {job_id} не добавлена: не указано время запуска.")
             return
-        if sched.run_at < datetime.now(timezone.utc):
+
+        now = datetime.now(timezone.utc)
+
+        if sched.run_at < now:
             logger.warning(
-                f"⏰ Задача {job_id} не добавлена: время {sched.run_at} уже прошло."
+                f"⏰ Время {sched.run_at} уже прошло. Выполняем задачу {job_id} немедленно."
             )
+            asyncio.create_task(execute_analysis(sched))  # запускаем в фоне
             return
 
         scheduler.add_job(
@@ -97,7 +102,6 @@ def add_schedule_job(sched: ChatSchedules):
             id=job_id,
             replace_existing=True
         )
-
     else:
         logger.warning(f"❓ Неизвестный тип задачи: {sched.schedule_type}")
         return

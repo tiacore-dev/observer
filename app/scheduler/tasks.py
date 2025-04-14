@@ -9,7 +9,8 @@ from app.database.models import (
     AnalysisResult,
     Messages,
     ChatSchedules,
-    Prompts
+    Prompts,
+    Companies
 )
 
 
@@ -19,7 +20,7 @@ async def analyze(schedule: ChatSchedules):
     """
     chat_id = schedule.chat.chat_id
     logger.info(f"Начало анализа для чата {chat_id}")
-
+    company = await Companies.get_or_none(company_id=schedule.company.company_id)
     chat = await Chats.get_or_none(chat_id=chat_id)
     if not chat:
         logger.error(f"Чат {chat_id} не найден.")
@@ -40,7 +41,8 @@ async def analyze(schedule: ChatSchedules):
                 "tokens_input": 0,
                 "tokens_output": 0,
                 "prompt": schedule.prompt,
-                "schedule": schedule
+                "schedule": schedule,
+                "company": company
             }
         analysis_start = first_message.timestamp
 
@@ -64,7 +66,10 @@ async def analyze(schedule: ChatSchedules):
             "tokens_input": 0,
             "tokens_output": 0,
             "prompt": schedule.prompt,
-            "schedule": schedule
+            "date_to": analysis_end,
+            "date_from": analysis_start,
+            "schedule": schedule,
+            "company": company
         }
 
     logger.info(f"Сообщений для анализа найдено: {len(messages)}")
@@ -77,6 +82,7 @@ async def analyze(schedule: ChatSchedules):
 
         analysis_result, tokens_input, tokens_output = await yandex_analyze(
             prompt, messages)
+
     except Exception as e:
         logger.error(f"Ошибка при анализе сообщений: {e}")
         raise
@@ -88,7 +94,10 @@ async def analyze(schedule: ChatSchedules):
         "tokens_input": tokens_input,
         "tokens_output": tokens_output,
         "prompt": prompt,
-        "schedule": schedule
+        "date_to": analysis_end,
+        "date_from": analysis_start,
+        "schedule": schedule,
+        "company": company
     }
 
 
@@ -106,8 +115,14 @@ async def save_analysis_result(data):
             result_text=data["analysis_result"],
             tokens_input=data["tokens_input"],
             tokens_output=data["tokens_output"],
-            schedule=data['schedule']
+            schedule=data['schedule'],
+            date_to=data['date_to'],
+            date_from=data['date_from'],
+            company=data['company']
         )
+        logger.debug(
+            f"💾 Сохранили анализ: {analysis.analysis_id} — тип: {type(analysis.analysis_id)}")
+
         logger.info(
             f"Результат анализа сохранён для чата {data['chat'].chat_id}.")
         return analysis.analysis_id
@@ -122,11 +137,16 @@ async def send_analysis_result(target_chats: list[Chats], chat_name, bot_token, 
     """
     bot = Bot(bot_token)
 
+    me = await bot.get_me()
+    logger.debug(f"🤖 Бот: {me.username} ({me.id})")
+
     message_text = f"""Результат анализа для чата {
         chat_name}:\n\n{analysis_result}"""
 
     try:
         for chat in target_chats:
+            logger.debug(
+                f"📨 Пытаемся отправить в chat_id={chat.chat_id} ({type(chat.chat_id)})")
             await bot.send_message(chat_id=chat.chat_id, text=message_text)
         logger.info(f"""Результат анализа для чата {
             chat_name} успешно отправлен.""")

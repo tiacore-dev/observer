@@ -8,7 +8,7 @@ from app.database.models import ChatSchedules
 async def start_scheduler():
 
     schedules = await ChatSchedules.filter(enabled=True).prefetch_related('chat', 'prompt', 'company', 'bot')
-
+    logger.debug(f"👟 Запускаем планировщик. Загружено {len(schedules)} задач")
     for schedule in schedules:
         add_schedule_job(schedule)
 
