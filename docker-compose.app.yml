@@ -1,19 +1,29 @@
+version: '3.8'
+
 services:
   web:
     image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
-    tty: true
-    stdin_open: true
     restart: always
     ports:
       - "${PORT}:8000"
     volumes:
-      - ./logs:/app/logs  
-      - .env:/app/.env 
+      - ./logs:/app/logs
+      - .env:/app/.env
     command: >
-       gunicorn -c gunicorn.conf.py run:app
+      gunicorn -c gunicorn.conf.py run:app
     networks:
       - observer_network
 
+  scheduler:
+    image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
+    restart: always
+    volumes:
+      - ./logs:/app/logs
+      - .env:/app/.env
+    command: >
+      python schedule_run.py
+    networks:
+      - observer_network
 
 networks:
   observer_network:

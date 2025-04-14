@@ -21,8 +21,3 @@ max_requests = 500
 max_requests_jitter = 50
 
 preload_app = True
-
-
-def on_starting(server):
-    import os
-    os.environ["RUN_SCHEDULER"] = "true"
