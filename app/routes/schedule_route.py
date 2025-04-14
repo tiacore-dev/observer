@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends,  HTTPException, Body, status
 from loguru import logger
 from tortoise.expressions import Q
 from app.handlers.auth_handlers import get_current_user
-from app.scheduler.add_or_remove_schedules import add_schedule_job, remove_schedule_job
+from app.handlers.rabbit_handler import publish_schedule_event
 from app.scheduler.scheduler import list_scheduled_jobs
 from app.database.models import (
     ChatSchedules,
@@ -63,8 +63,8 @@ async def create_schedule(data: ScheduleCreateSchema = Body(...), admin: Users =
         if data.target_chats:
             for chat_id in data.target_chats:
                 await TargetChats.create(schedule=schedule, chat_id=chat_id)
-        add_schedule_job(schedule)
-        list_scheduled_jobs()
+        await publish_schedule_event(schedule.schedule_id, action="add")
+
         return ScheduleResponseSchema(schedule_id=schedule.schedule_id)
 
     except Exception as e:
@@ -81,16 +81,16 @@ async def toggle_schedule(schedule_id: UUID, admin: Users = Depends(get_current_
     schedule.enabled = not schedule.enabled
     await schedule.save()
     if schedule.enabled:
-        add_schedule_job(schedule)
+        await publish_schedule_event(schedule_id, action="add")
     else:
-        remove_schedule_job(schedule_id)
+        await publish_schedule_event(schedule_id, action="delete")
 
 
 @schedule_router.patch("/{schedule_id}", response_model=ScheduleResponseSchema)
 async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...), admin: Users = Depends(get_current_user)):
     updated_data = data.model_dump(exclude_unset=True)
     schedule = await ChatSchedules.get_or_none(schedule_id=schedule_id)
-    remove_schedule_job(schedule_id)
+    await publish_schedule_event(schedule_id, action="delete")
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
     if "company" in updated_data:
@@ -127,7 +127,7 @@ async def edit_schedule(schedule_id: UUID, data: ScheduleEditSchema = Body(...),
             raise HTTPException(
                 status_code=404, detail="Расписание не найдено")
         if schedule.enabled:
-            add_schedule_job(schedule)
+            await publish_schedule_event(schedule_id, action="add")
         logger.success(f"Расписание {schedule_id} успешно обновлено")
         if data.target_chats:
             # Привязываем чаты к расписанию
@@ -156,7 +156,7 @@ async def delete_schedule(schedule_id: UUID, admin: Users = Depends(get_current_
         await TargetChats.filter(schedule=schedule).delete()
         await schedule.delete()
         logger.success(f"Расписание {schedule_id} удалено")
-        remove_schedule_job(schedule_id)
+        await publish_schedule_event(schedule_id, action="delete")
     except Exception as e:
         logger.exception(f"Ошибка при удалении расписания {schedule_id}")
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
