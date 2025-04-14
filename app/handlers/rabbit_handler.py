@@ -13,7 +13,7 @@ async def publish_schedule_event(schedule_id: str, action: str = "add"):
             aio_pika.Message(
                 body=json.dumps({
                     "action": action,
-                    "schedule_id": schedule_id,
+                    "schedule_id": str(schedule_id),
                 }).encode()
             ),
             routing_key="schedules",
