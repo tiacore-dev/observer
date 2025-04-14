@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
-
-from metrics.logger import setup_logger
 from metrics.tracer import init_tracer
 from app.routes import register_routes
 from config import Settings
@@ -19,7 +17,6 @@ def create_app(config_name='Development') -> FastAPI:
         allow_headers=["*"],  # Разрешаем все заголовки
     )
 
-    setup_logger()
     if config_name != 'Test':
         db_url = settings.DATABASE_URL
         register_tortoise(

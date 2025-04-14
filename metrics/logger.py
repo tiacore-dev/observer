@@ -1,4 +1,5 @@
 import sys
+import logging
 from loguru import logger
 from prometheus_client import Counter
 
@@ -27,8 +28,27 @@ def prometheus_hook(message):
             print(f"[PrometheusHook] Ошибка при инкременте метрик: {e}")
 
 
-# 🛠 Logger setup — простой текст, как раньше
+# 🧲 InterceptHandler для stdlib логгера
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        logger.opt(depth=6, exception=record.exc_info).log(
+            level, record.getMessage())
+
+
+# 🛠 Основная настройка логгера
 def setup_logger():
+    # 🔌 Перехватываем стандартный логгер
+    logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
+
+    # 🔊 Перехватываем uvicorn/gunicorn
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access", "gunicorn", "gunicorn.error"):
+        logging.getLogger(name).handlers = [InterceptHandler()]
+        logging.getLogger(name).propagate = False
+
     logger.remove()
 
     logger.add(
@@ -47,7 +67,6 @@ def setup_logger():
         level="DEBUG",
         rotation="10 MB",
         retention="7 days",
-        # compression="zip",
         format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {function}:{line} - {message}",
         enqueue=True,
     )

@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
+from loguru import logger
 from app import create_app
 from app.database.models import Users, UserRoles, Companies, UserCompanyRelations
 from app.scheduler.scheduler import start_scheduler
+from metrics.logger import setup_logger
 
 load_dotenv()
 
@@ -12,6 +14,10 @@ MAIN_PROCESS_PID = os.getpid()  # сохраняем PID до запуска Gun
 PORT = 8000
 
 CONFIG_NAME = os.getenv('CONFIG_NAME')
+
+
+setup_logger()
+
 
 app = create_app(config_name=CONFIG_NAME)
 
@@ -45,12 +51,14 @@ async def create_admin():
 
 @app.on_event("startup")
 async def startup_event():
-    print(f"🧠 Startup in PID {os.getpid()}, main PID is {MAIN_PROCESS_PID}")
-    if os.getpid() != MAIN_PROCESS_PID:
-        return  # не главный процесс — пропускаем
-    # Создаем администратора при запуске
-    await create_admin()
+    if os.environ.get("RUN_SCHEDULER") != "true":
+        logger.info("⏭️ Планировщик не будет запущен в этом воркере")
+        return
+
+    logger.info("✅ Запускаем планировщик")
     await start_scheduler()
+    await create_admin()
+
 
 # 📌 Запуск Uvicorn
 if __name__ == "__main__":
