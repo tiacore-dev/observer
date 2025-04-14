@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger
 from app.database.models import ChatSchedules
 from app.scheduler.init_scheduler import scheduler
@@ -83,7 +83,7 @@ def add_schedule_job(sched: ChatSchedules):
             logger.warning(
                 f"⚠️ Задача {job_id} не добавлена: не указано время запуска.")
             return
-        if sched.run_at < datetime.utcnow():
+        if sched.run_at < datetime.now(timezone.utc):
             logger.warning(
                 f"⏰ Задача {job_id} не добавлена: время {sched.run_at} уже прошло."
             )

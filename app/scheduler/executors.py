@@ -22,6 +22,12 @@ async def execute_analysis(schedule: ChatSchedules):
             now = datetime.now(timezone.utc)
 
             if schedule.send_strategy == "fixed":
+                if schedule.time_to_send is None:
+                    logger.warning(
+                        "time_to_send не указано при стратегии 'fixed'")
+                    await send_tasks(schedule, analysis_id)
+                    return
+
                 send_time_today = now.replace(
                     hour=schedule.time_to_send.hour,
                     minute=schedule.time_to_send.minute,
@@ -53,7 +59,7 @@ async def execute_analysis(schedule: ChatSchedules):
                 logger.warning(
                     f"Неизвестная стратегия отправки: {schedule.send_strategy}. Отправляем сразу.")
                 await send_tasks(schedule, analysis_id)
-        schedule.last_run_at = datetime.utcnow()
+        schedule.last_run_at = datetime.now(timezone.utc)
         await schedule.save()
         logger.info(f"Анализ завершён для чата {schedule.chat.chat_id}.")
 

@@ -75,7 +75,7 @@ async def analyze(schedule: ChatSchedules):
             raise ValueError(
                 f"Промпт с ID {schedule.prompt.prompt_id} не найден.")
 
-        analysis_result, tokens_input, tokens_output = yandex_analyze(
+        analysis_result, tokens_input, tokens_output = await yandex_analyze(
             prompt, messages)
     except Exception as e:
         logger.error(f"Ошибка при анализе сообщений: {e}")
