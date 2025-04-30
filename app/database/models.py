@@ -7,24 +7,38 @@ from tortoise.models import Model
 
 
 class UserRoles(Model):
-
     role_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     role_name = fields.CharField(max_length=50, unique=True)
+    role_system_name = fields.CharField(max_length=50, null=True, unique=True)
 
     def __repr__(self):
-        return f"<UserRoles(role_id={self.role_id}, role_name='{self.role_name}')>"
+        return f"<UserRole(role_id={self.role_id}, role_name='{self.role_name}')>"
 
     class Meta:
         table = "user_roles"
 
 
-class Permissions(Model):
-    permission_id = fields.UUIDField(pk=True, default=uuid.uuid4)
+class RolePermissionRelation(Model):
+    role_permission_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     role = fields.ForeignKeyField(
-        "models.UserRoles", related_name="permissions")
+        "models.UserRoles", related_name="role_permission_relations",
+        on_delete=fields.CASCADE)
+    permission = fields.ForeignKeyField(
+        "models.Permissions", related_name="role_permission_relations",
+        on_delete=fields.CASCADE)
+    created_at = fields.DatetimeField(auto_now_add=True)
+
+    class Meta:
+        table = "role_permission_relations"
+
+
+class Permissions(Model):
+    permission_id = fields.CharField(max_length=255, pk=True)
+    permission_name = fields.CharField(max_length=255)
+    comment = fields.CharField(max_length=255, null=True)
 
     def __repr__(self):
-        return f"<Permissions(permission_id={self.permission_id}, role={self.role.role_id})>"
+        return f"<Permissions(permission_id={self.permission_id}, permission_name={self.permission_name})>"
 
     class Meta:
         table = "permissions"

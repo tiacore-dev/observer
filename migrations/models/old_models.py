@@ -7,24 +7,38 @@ from tortoise.models import Model
 
 
 class UserRoles(Model):
-
     role_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     role_name = fields.CharField(max_length=50, unique=True)
+    role_system_name = fields.CharField(max_length=50, null=True, unique=True)
 
     def __repr__(self):
-        return f"<UserRoles(role_id={self.role_id}, role_name='{self.role_name}')>"
+        return f"<UserRole(role_id={self.role_id}, role_name='{self.role_name}')>"
 
     class Meta:
         table = "user_roles"
 
 
-class Permissions(Model):
-    permission_id = fields.UUIDField(pk=True, default=uuid.uuid4)
+class RolePermissionRelation(Model):
+    role_permission_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     role = fields.ForeignKeyField(
-        "diff_models.UserRoles", related_name="permissions")
+        "diff_models.UserRoles", related_name="role_permission_relations",
+        on_delete=fields.CASCADE)
+    permission = fields.ForeignKeyField(
+        "diff_models.Permissions", related_name="role_permission_relations",
+        on_delete=fields.CASCADE)
+    created_at = fields.DatetimeField(auto_now_add=True)
+
+    class Meta:
+        table = "role_permission_relations"
+
+
+class Permissions(Model):
+    permission_id = fields.CharField(max_length=255, pk=True)
+    permission_name = fields.CharField(max_length=255)
+    comment = fields.CharField(max_length=255, null=True)
 
     def __repr__(self):
-        return f"<Permissions(permission_id={self.permission_id}, role={self.role.role_id})>"
+        return f"<Permissions(permission_id={self.permission_id}, permission_name={self.permission_name})>"
 
     class Meta:
         table = "permissions"
@@ -149,7 +163,8 @@ class Bots(Model):
     secret_token = fields.CharField(max_length=255)
     bot_username = fields.CharField(max_length=255)
     bot_first_name = fields.CharField(max_length=255)
-    company = fields.ForeignKeyField("diff_models.Companies", related_name="bots")
+    company = fields.ForeignKeyField(
+        "diff_models.Companies", related_name="bots")
     is_active = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     comment = fields.TextField(null=True)
@@ -167,8 +182,10 @@ class Bots(Model):
 
 class BotChatRelations(Model):
     bot_chat_relation_id = fields.UUIDField(pk=True, default=uuid.uuid4)
-    bot = fields.ForeignKeyField("diff_models.Bots", related_name="bot_relations")
-    chat = fields.ForeignKeyField("diff_models.Chats", related_name="bot_relations")
+    bot = fields.ForeignKeyField(
+        "diff_models.Bots", related_name="bot_relations")
+    chat = fields.ForeignKeyField(
+        "diff_models.Chats", related_name="bot_relations")
     is_admin = fields.BooleanField(default=False)
 
     def __repr__(self):
@@ -203,7 +220,8 @@ class Messages(Model):
 class ChatSchedules(Model):
     schedule_id = fields.UUIDField(pk=True, default=uuid.uuid4)
 
-    chat = fields.ForeignKeyField("diff_models.Chats", related_name="schedules")
+    chat = fields.ForeignKeyField(
+        "diff_models.Chats", related_name="schedules")
     prompt = fields.ForeignKeyField(
         "diff_models.Prompts",
         related_name="schedules"
@@ -256,7 +274,8 @@ class TargetChats(Model):
     target_chat_id = fields.UUIDField(pk=True, default=uuid.uuid4)
     schedule = fields.ForeignKeyField(
         "diff_models.ChatSchedules", related_name="target_chats")
-    chat = fields.ForeignKeyField("diff_models.Chats", related_name="target_chats")
+    chat = fields.ForeignKeyField(
+        "diff_models.Chats", related_name="target_chats")
 
     def __repr__(self):
         return f"<TargetChats(target_chat_id={self.target_chat_id}, chat={self.chat.chat_id})>"
@@ -269,7 +288,8 @@ class AnalysisResult(Model):
 
     analysis_id = fields.UUIDField(pk=True, default=uuid.uuid4)
 
-    prompt = fields.ForeignKeyField("diff_models.Prompts", related_name="analysis")
+    prompt = fields.ForeignKeyField(
+        "diff_models.Prompts", related_name="analysis")
     result_text = fields.TextField()
     chat = fields.ForeignKeyField(
         "diff_models.Chats", related_name="analysis_results")
@@ -321,7 +341,6 @@ class Prompts(Model):
     class Meta:
         table = "prompts"
 
-from tortoise import Model, fields
 
 MAX_VERSION_LENGTH = 255
 
@@ -332,4 +351,3 @@ class Aerich(Model):
 
     class Meta:
         ordering = ["-id"]
-

@@ -25,8 +25,8 @@ async def create_admin():
         if user:
             print("Админ уже существует")
             return
-        role = await UserRoles.create(role_name="Администратор")
-        company = await Companies.create(company_name="Tiacore")
+        role = await UserRoles.get_or_create(role_name="Администратор", role_system_name="admin")
+        company = await Companies.get_or_create(company_name="Tiacore")
 
         password = os.getenv('PASSWORD')
         if not password:

@@ -1,8 +1,0 @@
-{
-  "upgrade": [
-    "ALTER TABLE \"analysis_results\" ALTER COLUMN \"send_time\" DROP NOT NULL"
-  ],
-  "downgrade": [
-    "ALTER TABLE \"analysis_results\" ALTER COLUMN \"send_time\" SET NOT NULL"
-  ]
-}
