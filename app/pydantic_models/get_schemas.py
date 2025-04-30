@@ -92,9 +92,9 @@ def user_role_filter_params(
 
 
 class PermissionSchema(BaseModel):
-    permission_id: UUID4
-    role_id: UUID4
-    role_name: str
+    permission_id: str
+    permission_name: str
+    comment: Optional[str] = None
 
 
 class PermissionListSchema(BaseModel):
@@ -103,16 +103,16 @@ class PermissionListSchema(BaseModel):
 
 
 def permission_filter_params(
-    role_name: Optional[str] = Query(
+    permission_name: Optional[str] = Query(
         None, description="Фильтр по названию роли"),
     sort_by: Optional[str] = Query(
-        "role__role_name", description="Поле сортировки"),
+        "permission_name", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
     page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
-        "role_name": role_name,
+        "permission_name": permission_name,
         "sort_by": sort_by,
         "order": order,
         "page": page,

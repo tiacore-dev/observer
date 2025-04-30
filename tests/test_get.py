@@ -10,11 +10,12 @@ async def seed_chat_account_role_data():
     await Chats.create(chat_id=2, chat_name="Чат 2")
     await Accounts.create(account_id=1, username="user1", account_name="Аккаунт A")
     await Accounts.create(account_id=2, username="user2", account_name="Аккаунт B")
-    role_1 = await UserRoles.create(role_id=uuid.uuid4(), role_name="Админ")
-    role_2 = await UserRoles.create(role_id=uuid.uuid4(), role_name="Пользователь")
+    await UserRoles.create(role_id=uuid.uuid4(), role_name="Админ")
+    await UserRoles.create(role_id=uuid.uuid4(), role_name="Пользователь")
 
-    await Permissions.create(permission_id=uuid.uuid4(), role=role_1)
-    await Permissions.create(permission_id=uuid.uuid4(), role=role_2)
+    await Permissions.create(permission_id=str(uuid.uuid4()), permission_name="can_view_chats", comment="Просмотр чатов")
+    await Permissions.create(permission_id=str(uuid.uuid4()), permission_name="can_view_accounts", comment="Просмотр аккаунтов")
+
     yield
 
 
@@ -84,21 +85,19 @@ async def test_get_permissions(seed_chat_account_role_data, test_app: AsyncClien
 
     data = response.json()
     assert data["total"] == 2
-    assert {p["role_name"]
-            for p in data["permissions"]} == {"Админ", "Пользователь"}
 
 
 @pytest.mark.asyncio
-async def test_filter_permissions_by_role_name(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
+async def test_filter_permissions_by_permission_name(seed_chat_account_role_data, test_app: AsyncClient, jwt_token_admin):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
     response = await test_app.get(
-        "/api/permissions/all?role_name=Админ", headers=headers)
+        "/api/permissions/all?permission_name=can_view_chats", headers=headers)
     assert response.status_code == 200
 
     data = response.json()
     assert data["total"] == 1
-    assert data["permissions"][0]["role_name"] == "Админ"
+    assert data["permissions"][0]["permission_name"] == "can_view_chats"
 
 
 @pytest.mark.asyncio
@@ -124,12 +123,14 @@ async def test_permission_sorting(seed_chat_account_role_data, test_app: AsyncCl
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
 
     response_asc = await test_app.get(
-        "/api/permissions/all?sort_by=role__role_name&order=asc", headers=headers)
+        "/api/permissions/all?sort_by=permission_name&order=asc", headers=headers)
     response_desc = await test_app.get(
-        "/api/permissions/all?sort_by=role__role_name&order=desc", headers=headers)
+        "/api/permissions/all?sort_by=permission_name&order=desc", headers=headers)
 
-    names_asc = [p["role_name"] for p in response_asc.json()["permissions"]]
-    names_desc = [p["role_name"] for p in response_desc.json()["permissions"]]
+    names_asc = [p["permission_name"]
+                 for p in response_asc.json()["permissions"]]
+    names_desc = [p["permission_name"]
+                  for p in response_desc.json()["permissions"]]
 
     assert names_asc == sorted(names_asc)
     assert names_desc == sorted(names_asc, reverse=True)

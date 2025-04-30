@@ -129,26 +129,26 @@ async def get_user_roles(filters: dict = Depends(user_role_filter_params), user:
 )
 async def get_permissions(filters: dict = Depends(permission_filter_params), user: str = Depends(get_current_user)):
     try:
-        query = Permissions.all().prefetch_related("role")
+        query = Permissions.all()
 
-        if filters.get("role_name"):
+        if filters.get("permission_name"):
             query = query.filter(
-                role__role_name__icontains=filters["role_name"])
+                permission_name__icontains=filters["permission_name"])
 
         order_by = f"{'-' if filters['order'] == 'desc' else ''}{filters['sort_by']}"
         query = query.order_by(order_by)
 
         total = await query.count()
-        results = await query.offset((filters["page"] - 1) * filters["page_size"]).limit(filters["page_size"])
+        permissions = await query.offset((filters["page"] - 1) * filters["page_size"]).limit(filters["page_size"])
 
         return PermissionListSchema(
             total=total,
             permissions=[
                 PermissionSchema(
-                    permission_id=p.permission_id,
-                    role_id=p.role.role_id,
-                    role_name=p.role.role_name
-                ) for p in results
+                    permission_id=permission.permission_id,
+                    comment=permission.comment,
+                    permission_name=permission.permission_name
+                ) for permission in permissions
             ]
         )
 
