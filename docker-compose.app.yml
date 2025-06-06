@@ -13,8 +13,18 @@ services:
     networks:
       - observer_network
 
+    redis:
+      image: redis:7-alpine
+      container_name: redis
+      ports:
+        - "6379:6379"
+      restart: always
+      networks:
+      - observer_network
+
   web:
     image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
+    container_name: observer
     restart: always
     ports:
       - "${PORT}:8000"
@@ -28,6 +38,7 @@ services:
 
   scheduler:
     image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
+    container_name: scheduler
     restart: always
     volumes:
       - ./logs:/app/logs

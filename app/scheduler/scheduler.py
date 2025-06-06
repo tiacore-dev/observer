@@ -1,16 +1,17 @@
 from loguru import logger
-from app.scheduler.init_scheduler import scheduler
+
+from app.database.models import ChatSchedule
 from app.scheduler.add_or_remove_schedules import add_schedule_job
+from app.scheduler.init_scheduler import scheduler
 
-from app.database.models import ChatSchedules
 
-
-async def start_scheduler():
-
-    schedules = await ChatSchedules.filter(enabled=True).prefetch_related('chat', 'prompt', 'company', 'bot')
+async def start_scheduler(settings):
+    schedules = await ChatSchedule.filter(enabled=True).prefetch_related(
+        "chat", "prompt", "company", "bot"
+    )
     logger.debug(f"👟 Запускаем планировщик. Загружено {len(schedules)} задач")
     for schedule in schedules:
-        add_schedule_job(schedule)
+        add_schedule_job(schedule, settings)
 
     scheduler.start()
     logger.info("Планировщик успешно запущен с задачами из базы.")

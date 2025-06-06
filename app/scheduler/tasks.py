@@ -1,27 +1,27 @@
 # from celery import app
 
 from datetime import datetime, timezone
+
 from aiogram import Bot
 from loguru import logger
-from app.yandex_funcs.yandex_funcs import yandex_analyze
+
 from app.database.models import (
-    Chats,
     AnalysisResult,
-    Messages,
-    ChatSchedules,
-    Prompts,
-    Companies
+    Chat,
+    ChatSchedule,
+    Message,
+    Prompt,
 )
+from app.yandex_funcs.yandex_funcs import yandex_analyze
 
 
-async def analyze(schedule: ChatSchedules):
+async def analyze(schedule: ChatSchedule, settings):
     """
     Анализирует сообщения в чате за указанный временной промежуток.
     """
     chat_id = schedule.chat.chat_id
     logger.info(f"Начало анализа для чата {chat_id}")
-    company = await Companies.get_or_none(company_id=schedule.company.company_id)
-    chat = await Chats.get_or_none(chat_id=chat_id)
+    chat = await Chat.get_or_none(id=chat_id)
     if not chat:
         logger.error(f"Чат {chat_id} не найден.")
         raise ValueError(f"Чат {chat_id} не найден.")
@@ -32,7 +32,7 @@ async def analyze(schedule: ChatSchedules):
     if schedule.last_run_at:
         analysis_start = schedule.last_run_at
     else:
-        first_message = await Messages.filter(chat=chat).order_by("timestamp").first()
+        first_message = await Message.filter(chat=chat).order_by("timestamp").first()
         if not first_message:
             logger.warning(f"Нет сообщений в чате {chat_id} для анализа")
             return {
@@ -42,7 +42,7 @@ async def analyze(schedule: ChatSchedules):
                 "tokens_output": 0,
                 "prompt": schedule.prompt,
                 "schedule": schedule,
-                "company": company
+                "company_id": schedule.company_id,
             }
         analysis_start = first_message.timestamp
 
@@ -51,15 +51,23 @@ async def analyze(schedule: ChatSchedules):
     logger.info(f"Диапазон анализа: {analysis_start} - {analysis_end}")
 
     try:
-        messages = await Messages.filter(chat=chat, timestamp__gte=analysis_start,
-                                         timestamp__lte=analysis_end).order_by("timestamp").prefetch_related("account", "chat").all()
+        messages = (
+            await Message.filter(
+                chat=chat, timestamp__gte=analysis_start, timestamp__lte=analysis_end
+            )
+            .order_by("timestamp")
+            .prefetch_related("account", "chat")
+            .all()
+        )
     except Exception as e:
         logger.error(f"Ошибка при получении сообщений: {e}")
         raise
 
     if not messages:
         logger.warning(
-            f"Нет сообщений для анализа в чате {chat_id} за период {analysis_start} - {analysis_end}.")
+            f"""Нет сообщений для анализа в чате {chat_id} за 
+            период {analysis_start} - {analysis_end}."""
+        )
         return {
             "chat": chat,
             "analysis_result": None,
@@ -69,19 +77,19 @@ async def analyze(schedule: ChatSchedules):
             "date_to": analysis_end,
             "date_from": analysis_start,
             "schedule": schedule,
-            "company": company
+            "company_id": schedule.company_id,
         }
 
     logger.info(f"Сообщений для анализа найдено: {len(messages)}")
 
     try:
-        prompt = await Prompts.get_or_none(prompt_id=schedule.prompt.prompt_id)
+        prompt = await Prompt.get_or_none(id=schedule.prompt.id)
         if not prompt:
-            raise ValueError(
-                f"Промпт с ID {schedule.prompt.prompt_id} не найден.")
+            raise ValueError(f"Промпт с ID {schedule.prompt.id} не найден.")
 
         analysis_result, tokens_input, tokens_output = await yandex_analyze(
-            prompt, messages)
+            prompt.id, messages, settings
+        )
 
     except Exception as e:
         logger.error(f"Ошибка при анализе сообщений: {e}")
@@ -97,7 +105,7 @@ async def analyze(schedule: ChatSchedules):
         "date_to": analysis_end,
         "date_from": analysis_start,
         "schedule": schedule,
-        "company": company
+        "company_id": schedule.company_id,
     }
 
 
@@ -105,33 +113,31 @@ async def save_analysis_result(data):
     """
     Сохраняет результат анализа в базу данных.
     """
-    logger.info(
-        f"Сохранение результата анализа для чата {data['chat'].chat_id}.")
+    logger.info(f"Сохранение результата анализа для чата {data['chat'].id}.")
 
     if data["analysis_result"]:
         analysis = await AnalysisResult.create(
             prompt=data["prompt"],
-            chat=data['chat'],
+            chat=data["chat"],
             result_text=data["analysis_result"],
             tokens_input=data["tokens_input"],
             tokens_output=data["tokens_output"],
-            schedule=data['schedule'],
-            date_to=data['date_to'],
-            date_from=data['date_from'],
-            company=data['company']
+            schedule=data["schedule"],
+            date_to=data["date_to"],
+            date_from=data["date_from"],
+            company_id=data["company_id"],
         )
-        logger.debug(
-            f"💾 Сохранили анализ: {analysis.analysis_id} — тип: {type(analysis.analysis_id)}")
+        logger.debug(f"💾 Сохранили анализ: {analysis.id} — тип: {type(analysis.id)}")
 
-        logger.info(
-            f"Результат анализа сохранён для чата {data['chat'].chat_id}.")
-        return analysis.analysis_id
+        logger.info(f"Результат анализа сохранён для чата {data['chat'].id}.")
+        return analysis.id
     else:
-        logger.info(
-            f"Для чата {data['chat'].chat_id} нет анализа для сохранения.")
+        logger.info(f"Для чата {data['chat'].chat_id} нет анализа для сохранения.")
 
 
-async def send_analysis_result(target_chats: list[Chats], chat_name, bot_token, analysis_result):
+async def send_analysis_result(
+    target_chats: list[Chat], chat_name, bot_token, analysis_result
+):
     """
     Отправляет результат анализа в Telegram.
     """
@@ -140,18 +146,17 @@ async def send_analysis_result(target_chats: list[Chats], chat_name, bot_token, 
     me = await bot.get_me()
     logger.debug(f"🤖 Бот: {me.username} ({me.id})")
 
-    message_text = f"""Результат анализа для чата {
-        chat_name}:\n\n{analysis_result}"""
+    message_text = f"""Результат анализа для чата {chat_name}:\n\n{analysis_result}"""
 
     try:
         for chat in target_chats:
-            logger.debug(
-                f"📨 Пытаемся отправить в chat_id={chat.chat_id} ({type(chat.chat_id)})")
-            await bot.send_message(chat_id=chat.chat_id, text=message_text)
-        logger.info(f"""Результат анализа для чата {
-            chat_name} успешно отправлен.""")
+            logger.debug(f"📨 Пытаемся отправить в chat_id={chat.id} ({type(chat.id)})")
+            await bot.send_message(chat_id=chat.id, text=message_text)
+        logger.info(f"""Результат анализа для чата {chat_name} успешно отправлен.""")
     except Exception as e:
-        logger.error(f"""Ошибка при отправке результата в Telegram для чата {
-            chat_name}: {e}""", exc_info=True)
+        logger.error(
+            f"""Ошибка при отправке результата в Telegram для чата {chat_name}: {e}""",
+            exc_info=True,
+        )
     finally:
         await bot.session.close()

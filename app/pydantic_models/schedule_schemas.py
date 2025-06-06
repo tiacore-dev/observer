@@ -1,13 +1,15 @@
-from typing import Optional, List, Literal
 import datetime
+from typing import List, Literal, Optional
+from uuid import UUID
+
 from apscheduler.triggers.cron import CronTrigger
-from pydantic import BaseModel, Field, UUID4, field_validator, model_validator
 from fastapi import Query
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ScheduleCreateSchema(BaseModel):
-    chat: int = Field(...)
-    prompt: UUID4 = Field(...)
+    chat_id: int = Field(...)
+    prompt_id: UUID = Field(...)
     schedule_type: str = Field(...)
 
     interval_hours: Optional[int] = Field(None)
@@ -15,12 +17,15 @@ class ScheduleCreateSchema(BaseModel):
     time_of_day: Optional[datetime.time] = Field(None)
     cron_expression: Optional[str] = Field(None)
     run_at: Optional[datetime.datetime] = Field(None)
-    company: UUID4 = Field(...)
+
+    company_id: UUID = Field(...)
     target_chats: List[int] = Field(...)
-    bot: int = Field(...)
+    bot_id: int = Field(...)
     enabled: Optional[bool] = True
+
     send_strategy: Literal["fixed", "relative"] = Field(
-        ..., description="fixed — в указанное время, relative — через X минут после анализа"
+        ...,
+        description="fixed — в указанное время, relative — через X минут после анализа",
     )
     time_to_send: Optional[datetime.time] = Field(None)
     send_after_minutes: Optional[int] = Field(None)
@@ -42,34 +47,36 @@ class ScheduleCreateSchema(BaseModel):
             case "interval":
                 if self.interval_hours is None and self.interval_minutes is None:
                     raise ValueError(
-                        "Для типа interval необходимо указать interval_hours или interval_minutes")
+                        """Для типа interval необходимо указать 
+                        interval_hours или interval_minutes"""
+                    )
             case "daily_time":
                 if self.time_of_day is None:
                     raise ValueError(
-                        "Для типа daily_time необходимо указать time_of_day")
+                        "Для типа daily_time необходимо указать time_of_day"
+                    )
             case "cron":
                 if self.cron_expression is None:
-                    raise ValueError(
-                        "Для типа cron необходимо указать cron_expression")
+                    raise ValueError("Для типа cron необходимо указать cron_expression")
             case "once":
                 if self.run_at is None:
                     raise ValueError("Для типа once необходимо указать run_at")
 
         # Валидация стратегии отправки
         if self.send_strategy == "fixed" and not self.time_to_send:
-            raise ValueError(
-                "Для стратегии 'fixed' необходимо указать time_to_send")
+            raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
 
         if self.send_strategy == "relative" and self.send_after_minutes is None:
             raise ValueError(
-                "Для стратегии 'relative' необходимо указать send_after_minutes")
+                "Для стратегии 'relative' необходимо указать send_after_minutes"
+            )
 
         return self
 
 
 class ScheduleEditSchema(BaseModel):
-    chat: Optional[int] = Field(None)
-    prompt: Optional[UUID4] = Field(None)
+    chat_id: Optional[int] = Field(None)
+    prompt_id: Optional[UUID] = Field(None)
     schedule_type: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = Field(None)
@@ -80,12 +87,14 @@ class ScheduleEditSchema(BaseModel):
 
     target_chats: Optional[List[int]] = Field(None)
     removed_chats: Optional[List[int]] = Field(None)
-    bot: Optional[int] = Field(None)
+    bot_id: Optional[int] = Field(None)
     enabled: Optional[bool] = Field(None)
+
     send_strategy: Optional[Literal["fixed", "relative"]] = Field(None)
     time_to_send: Optional[datetime.time] = Field(None)
     send_after_minutes: Optional[int] = Field(None)
-    company: Optional[UUID4] = Field(None)
+
+    company_id: Optional[UUID] = Field(None)
 
     @field_validator("cron_expression")
     @classmethod
@@ -100,9 +109,12 @@ class ScheduleEditSchema(BaseModel):
     @model_validator(mode="after")
     def validate_schedule_edit(self):
         # Тип расписания
-        if self.schedule_type == "interval" and not (self.interval_hours or self.interval_minutes):
+        if self.schedule_type == "interval" and not (
+            self.interval_hours or self.interval_minutes
+        ):
             raise ValueError(
-                "Для типа interval нужно указать interval_hours или interval_minutes")
+                "Для типа interval нужно указать interval_hours или interval_minutes"
+            )
 
         if self.schedule_type == "daily_time" and not self.time_of_day:
             raise ValueError("Для типа daily_time нужно указать time_of_day")
@@ -115,21 +127,21 @@ class ScheduleEditSchema(BaseModel):
 
         # Стратегия отправки
         if self.send_strategy == "fixed" and not self.time_to_send:
-            raise ValueError(
-                "Для стратегии 'fixed' необходимо указать time_to_send")
+            raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
 
         if self.send_strategy == "relative" and self.send_after_minutes is None:
             raise ValueError(
-                "Для стратегии 'relative' необходимо указать send_after_minutes")
+                "Для стратегии 'relative' необходимо указать send_after_minutes"
+            )
 
         return self
 
 
 class ScheduleSchema(BaseModel):
-    schedule_id: UUID4
-    chat: int
-    prompt: UUID4
-    company: UUID4
+    id: UUID = Field(..., alias="schedule_id")
+    chat_id: int
+    prompt_id: UUID
+    company_id: UUID
     schedule_type: str
 
     interval_hours: Optional[int] = None
@@ -145,20 +157,28 @@ class ScheduleSchema(BaseModel):
     time_to_send: Optional[datetime.time] = None
     send_after_minutes: Optional[int] = None
 
-    bot: int
+    bot_id: int
 
     target_chats: list[int]
 
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
 
 class ScheduleShortSchema(BaseModel):
-    schedule_id: UUID4
-    prompt: UUID4
+    id: UUID = Field(..., alias="schedule_id")
+    prompt_id: UUID
     schedule_type: str
     enabled: bool
-    company: UUID4
-    chat: int
+    company_id: UUID
+    chat_id: int
     created_at: datetime.datetime
-    bot: int
+    bot_id: int
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
 
 class ScheduleListSchema(BaseModel):
@@ -167,30 +187,26 @@ class ScheduleListSchema(BaseModel):
 
 
 class ScheduleResponseSchema(BaseModel):
-    schedule_id: UUID4
+    schedule_id: UUID
 
 
 def schedule_filter_params(
-    search: Optional[str] = Query(
-        None, description="Фильтр по названию промпта"),
-    company: Optional[UUID4] = Query(None),
-    chat: Optional[UUID4] = Query(None),
+    company_id: Optional[UUID] = Query(None),
+    chat_id: Optional[UUID] = Query(None),
     schedule_type: Optional[str] = Query(None),
     enabled: Optional[bool] = Query(None),
-    sort_by: Optional[str] = Query(
-        "schedule_type", description="Поле сортировки"),
+    sort_by: Optional[str] = Query("schedule_type", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
+    page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
-        "search": search,
-        "company": company,
-        "chat": chat,
+        "company": company_id,
+        "chat": chat_id,
         "schedule_type": schedule_type,
         "enabled": enabled,
         "sort_by": sort_by,
         "order": order,
         "page": page,
-        "page_size": page_size
+        "page_size": page_size,
     }

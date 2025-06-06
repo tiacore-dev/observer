@@ -1,5 +1,6 @@
 import pytest
-from app.database.models import Chats
+
+from app.database.models import Account, Chat
 
 
 @pytest.mark.usefixtures("setup_db")
@@ -9,12 +10,18 @@ async def seed_chat():
     """Создает тестовое юридическое лицо, передавая объекты вместо ID."""
 
     # Создаем юридическое лицо, передавая объекты
-    chat = await Chats.create(
-        chat_name="Test Chat"
-    )
+    chat = await Chat.create(id=1, name="Test Chat")
 
-    return {
-        "chat_id": str(chat.chat_id),
-        "chat_name": chat.chat_name,
-        "created_at": chat.created_at,
-    }
+    return chat
+
+
+@pytest.mark.usefixtures("setup_db")
+@pytest.fixture(scope="function")
+@pytest.mark.asyncio
+async def seed_account():
+    """Создает тестовое юридическое лицо, передавая объекты вместо ID."""
+
+    # Создаем юридическое лицо, передавая объекты
+    account = await Account.create(name="Test Account")
+
+    return account

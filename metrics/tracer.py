@@ -1,18 +1,21 @@
 import platform
+
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry import trace
 
 
 def init_tracer(app):
-    resource = Resource(attributes={
-        "service.name": "observer-fastapi",
-        "host.name": platform.node(),
-        "deployment.environment": "dev"
-    })
+    resource = Resource(
+        attributes={
+            "service.name": "observer-fastapi",
+            "host.name": platform.node(),
+            "deployment.environment": "dev",
+        }
+    )
 
     tracer_provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(tracer_provider)

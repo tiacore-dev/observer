@@ -1,50 +1,58 @@
 import datetime
 from typing import List, Optional
-from pydantic import BaseModel, UUID4, Field
+from uuid import UUID
+
 from fastapi import Query
+from pydantic import Field
+
+from app.pydantic_models.clean_model import CleanableBaseModel
 
 
-class RegisterBotRequest(BaseModel):
+class RegisterBotRequest(CleanableBaseModel):
     token: str = Field(...)
-    company: UUID4 = Field(...)
+    company_id: UUID = Field(...)
     comment: Optional[str] = Field(None)
 
 
-class BotResponseModel(BaseModel):
+class BotResponseModel(CleanableBaseModel):
     bot_id: int
 
 
-class BotSchema(BaseModel):
-    bot_id: int
+class BotSchema(CleanableBaseModel):
+    id: int = Field(..., alias="bot_id")
     bot_token: str
     bot_username: str
     bot_first_name: str
-    company: UUID4
+    company_id: UUID
     is_active: bool
     created_at: datetime.datetime
     comment: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
-class BotListSchema(BaseModel):
+
+class BotListSchema(CleanableBaseModel):
     total: int
     bots: List[BotSchema]
 
 
 def bot_filter_params(
-    search: Optional[str] = Query(
-        None, description="Фильтр по названию бота"),
-    company: Optional[UUID4] = Query(None),
-    sort_by: Optional[str] = Query(
-        "bot_username", description="Поле сортировки"),
+    bot_username: Optional[str] = Query(None, description="Фильтр по названию бота"),
+    bot_first_name: Optional[str] = Query(None, description="Фильтр по названию бота"),
+    company_id: Optional[UUID] = Query(None, description="Фильтр по компании"),
+    sort_by: Optional[str] = Query("bot_username", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
+    page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
-        "search": search,
-        "company": company,
+        "bot_username": bot_username,
+        "bot_first_name": bot_first_name,
+        "company_id": company_id,
         "sort_by": sort_by,
         "order": order,
         "page": page,
-        "page_size": page_size
+        "page_size": page_size,
     }

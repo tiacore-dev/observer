@@ -1,33 +1,49 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Path, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from loguru import logger
+from tiacore_lib.handlers.dependency_handler import require_permission_in_context
 from tortoise.expressions import Q
-from app.handlers.telegram_api_url_handlers import validate_token_and_register, delete_webhook
-from app.handlers.auth_handlers import get_current_user
-from app.database.models import Users, Bots
-from app.pydantic_models.bot_schemas import RegisterBotRequest, BotSchema, BotListSchema, bot_filter_params
+
+from app.database.models import Bot
+from app.handlers.telegram_api_url_handlers import (
+    delete_webhook,
+    validate_token_and_register,
+)
+from app.pydantic_models.bot_schemas import (
+    BotListSchema,
+    BotSchema,
+    RegisterBotRequest,
+    bot_filter_params,
+)
 
 bot_router = APIRouter()
 
 
 @bot_router.post("/add", status_code=status.HTTP_201_CREATED)
-async def add_bot(data: RegisterBotRequest = Body(...), user: Users = Depends(get_current_user)):
+async def add_bot(
+    data: RegisterBotRequest = Body(...),
+    context=Depends(require_permission_in_context("add_bot")),
+):
     try:
-        bot = await validate_token_and_register(data.token, data.company, data.comment)
+        bot = await validate_token_and_register(
+            data.token, data.company_id, data.comment
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail="Invalid bot token") from e
-    return {"bot_id": bot.bot_id}
+    return {"bot_id": bot.id}
 
 
 @bot_router.delete("/{bot_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_bot(bot_id: int, user: Users = Depends(get_current_user)):
+async def delete_bot(
+    bot_id: int, _=Depends(require_permission_in_context("delete_bot"))
+):
     try:
-        bot = await Bots.filter(bot_id=bot_id).first()
+        bot = await Bot.filter(id=bot_id).first()
         if not bot:
             logger.warning(f"Бот {bot_id} не найден")
             raise HTTPException(status_code=404, detail="Бот не найден")
 
         token = bot.bot_token
-        await bot.delete()  # <-- await обязательно!
+        await bot.delete()
 
         await delete_webhook(token)
         logger.success(f"Бот {bot_id} успешно удален")
@@ -37,56 +53,54 @@ async def delete_bot(bot_id: int, user: Users = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Ошибка сервера") from e
 
 
-@bot_router.get("/all", response_model=BotListSchema, summary="Получение списка ботов с фильтрацией")
+@bot_router.get(
+    "/all", response_model=BotListSchema, summary="Получение списка ботов с фильтрацией"
+)
 async def get_bots(
     filters: dict = Depends(bot_filter_params),
-    user: Users = Depends(get_current_user)
+    _=Depends(require_permission_in_context("get_all_bots")),
 ):
     logger.info(f"Запрос на список ботов: {filters}")
 
     try:
         query = Q()
 
-        if filters.get("company"):
-            query &= Q(company=filters["company"])
+        if filters.get("company_id"):
+            query &= Q(company_id=filters["company_id"])
 
-        if filters.get("search"):
-            query &= Q(bot_username__icontains=filters["search"])
+        if filters.get("bot_username"):
+            query &= Q(bot_username__icontains=filters["bot_username"])
+        if filters.get("bot_first_name"):
+            query &= Q(bot_first_name__icontains=filters["bot_first_name"])
 
-        order_by = f"{'-' if filters.get('order') == 'desc' else ''}{filters.get('sort_by', 'bot_username')}"
+        order_by = f"{'-' if filters.get('order') == 'desc' else ''}{
+            filters.get('sort_by', 'bot_username')
+        }"
         page = filters.get("page", 1)
         page_size = filters.get("page_size", 10)
 
-        total_count = await Bots.filter(query).count()
+        total_count = await Bot.filter(query).count()
 
-        bots = await Bots.filter(query).order_by(order_by).offset(
-            (page - 1) * page_size
-        ).limit(page_size).values(
-            "bot_id",
-            "bot_token",
-            "bot_username",
-            "bot_first_name",
-            "company_id",
-            "is_active",
-            "created_at",
-            "comment"
+        bots = (
+            await Bot.filter(query)
+            .order_by(order_by)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .values(
+                "id",
+                "bot_token",
+                "bot_username",
+                "bot_first_name",
+                "company_id",
+                "is_active",
+                "created_at",
+                "comment",
+            )
         )
 
         return BotListSchema(
             total=total_count,
-            bots=[
-                BotSchema(
-                    bot_id=bot["bot_id"],
-                    bot_token=bot["bot_token"],
-                    bot_username=bot["bot_username"],
-                    bot_first_name=bot["bot_first_name"],
-                    company=bot["company_id"],
-                    is_active=bot["is_active"],
-                    created_at=bot["created_at"],
-                    comment=bot['comment']
-                )
-                for bot in bots
-            ]
+            bots=[BotSchema(**bot) for bot in bots],
         )
 
     except Exception as e:
@@ -96,37 +110,33 @@ async def get_bots(
 
 @bot_router.get("/{bot_id}", response_model=BotSchema, summary="Просмотр промпта")
 async def get_bot(
-    bot_id: int = Path(..., title="ID промпта",
-                       description="ID просматриваемого промпта"),
-    user: Users = Depends(get_current_user)
+    bot_id: int = Path(
+        ..., title="ID промпта", description="ID просматриваемого промпта"
+    ),
+    _=Depends(require_permission_in_context("view_bot")),
 ):
     logger.info(f"Запрос на просмотр промпта: {bot_id}")
     try:
-        bot = await Bots.filter(bot_id=bot_id).first().values(
-            "bot_id",
-            "bot_token",
-            "bot_username",
-            "bot_first_name",
-            "company_id",
-            "is_active",
-            "created_at",
-            "comment"
+        bot = (
+            await Bot.filter(id=bot_id)
+            .first()
+            .values(
+                "id",
+                "bot_token",
+                "bot_username",
+                "bot_first_name",
+                "company_id",
+                "is_active",
+                "created_at",
+                "comment",
+            )
         )
 
         if bot is None:
             logger.warning(f"Промпт {bot_id} не найден")
             raise HTTPException(status_code=404, detail="Промпт не найден")
 
-        bot_schema = BotSchema(
-            bot_id=bot["bot_id"],
-            bot_token=bot["bot_token"],
-            bot_username=bot["bot_username"],
-            bot_first_name=bot["bot_first_name"],
-            company=bot["company_id"],
-            is_active=bot["is_active"],
-            created_at=bot["created_at"],
-            comment=bot['comment']
-        )
+        bot_schema = BotSchema(**bot)
 
         logger.success(f"Промпт найден: {bot_schema}")
         return bot_schema

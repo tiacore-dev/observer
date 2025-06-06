@@ -1,36 +1,44 @@
-from typing import List, Optional
 import datetime
-from pydantic import BaseModel, UUID4, Field
+from typing import List, Optional
+from uuid import UUID
+
 from fastapi import Query
+from pydantic import BaseModel, Field
 
 
 class PromptCreateSchema(BaseModel):
-    prompt_name: str = Field(..., min_length=3, max_length=100)
+    name: str = Field(..., min_length=3, max_length=100, alias="prompt_name")
     text: str = Field(...)
-    company: UUID4 = Field(...)
-
-
-class PromptEditSchema(BaseModel):
-    prompt_name: Optional[str] = Field(None, min_length=3, max_length=100)
-    text: Optional[str] = None  # ✅ добавлено = None
-
-    class Config:
-        extra = "forbid"
-
-
-class PromptSchema(BaseModel):
-    prompt_id: UUID4
-    prompt_name: str
-    text: str
-    created_at: datetime.datetime
-    company: UUID4
+    company_id: UUID = Field(...)
 
     class Config:
         from_attributes = True
+        populate_by_name = True
+
+
+class PromptEditSchema(BaseModel):
+    name: Optional[str] = Field(None, min_length=3, max_length=100, alias="prompt_name")
+    text: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+
+class PromptSchema(BaseModel):
+    id: UUID = Field(..., alias="prompt_id")
+    name: str = Field(..., alias="prompt_name")
+    text: str
+    created_at: datetime.datetime
+    company_id: UUID
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
 
 class PromptResponseSchema(BaseModel):
-    prompt_id: UUID4
+    prompt_id: UUID
 
 
 class PromptListResponseSchema(BaseModel):
@@ -39,20 +47,20 @@ class PromptListResponseSchema(BaseModel):
 
 
 def prompt_filter_params(
-    search: Optional[str] = Query(
-        None, description="Фильтр по названию промпта"),
-    company: Optional[UUID4] = Query(None),
-    sort_by: Optional[str] = Query(
-        "prompt_name", description="Поле сортировки"),
+    prompt_name: Optional[str] = Query(None, description="Фильтр по названию промпта"),
+    text: Optional[str] = Query(None, description="Фильтр по тексту"),
+    company_id: Optional[UUID] = Query(None),
+    sort_by: Optional[str] = Query("name", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
+    page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
-        "search": search,
-        "company": company,
+        "prompt_name": prompt_name,
+        "text": text,
+        "company_id": company_id,
         "sort_by": sort_by,
         "order": order,
         "page": page,
-        "page_size": page_size
+        "page_size": page_size,
     }

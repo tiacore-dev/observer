@@ -1,9 +1,15 @@
-from loguru import logger
+import os
+
 import aioboto3
 from botocore.exceptions import ClientError
-from config import Settings
+from dotenv import load_dotenv
+from loguru import logger
 
-settings = Settings()
+from app.config import ConfigName, _load_settings
+
+load_dotenv()
+CONFIG_NAME = ConfigName(os.getenv("CONFIG_NAME", "Development"))
+settings = _load_settings(config_name=CONFIG_NAME)
 
 
 class AsyncS3Manager:
@@ -20,22 +26,23 @@ class AsyncS3Manager:
     def _build_path(self, chat_id: int, filename: str) -> str:
         return f"{self.bucket_folder}/{chat_id}/{filename}"
 
-    async def upload_bytes(self, file_bytes: bytes, chat_id: int, filename: str):
-        key = self._build_path(chat_id, filename)
+    def _get_client(self):
         session = self._get_session()
-        async with session.client(
+        return session.client(
             "s3",
             endpoint_url=self.endpoint_url,
             region_name=self.region_name,
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
-        ) as s3:
+        )
+
+    async def upload_bytes(self, file_bytes: bytes, chat_id: int, filename: str):
+        key = self._build_path(chat_id, filename)
+
+        async with self._get_client() as s3:  # type: ignore[attr-defined]
             try:
                 await s3.put_object(
-                    Bucket=self.bucket_name,
-                    Key=key,
-                    Body=file_bytes,
-                    ACL="private"
+                    Bucket=self.bucket_name, Key=key, Body=file_bytes, ACL="private"
                 )
                 logger.info(f"✅ Файл загружен: {key}")
                 return key
@@ -44,19 +51,12 @@ class AsyncS3Manager:
                 raise
 
     async def generate_presigned_url(self, key, expiration=3600):
-        session = self._get_session()
-        async with session.client(
-            "s3",
-            endpoint_url=self.endpoint_url,
-            region_name=self.region_name,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-        ) as s3:
+        async with self._get_client() as s3:  # type: ignore[attr-defined]
             try:
                 return await s3.generate_presigned_url(
-                    ClientMethod='get_object',
+                    ClientMethod="get_object",
                     Params={"Bucket": self.bucket_name, "Key": key},
-                    ExpiresIn=expiration
+                    ExpiresIn=expiration,
                 )
             except ClientError as e:
                 logger.error(f"Ошибка при генерации ссылки: {e}")
@@ -64,18 +64,10 @@ class AsyncS3Manager:
 
     async def list_chat_files(self, chat_id: int) -> list[str]:
         prefix = f"{self.bucket_folder}/{chat_id}/"
-        session = self._get_session()
-        async with session.client(
-            "s3",
-            endpoint_url=self.endpoint_url,
-            region_name=self.region_name,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-        ) as s3:
+        async with self._get_client() as s3:  # type: ignore[attr-defined]
             try:
                 response = await s3.list_objects_v2(
-                    Bucket=self.bucket_name,
-                    Prefix=prefix
+                    Bucket=self.bucket_name, Prefix=prefix
                 )
                 return [obj["Key"] for obj in response.get("Contents", [])]
             except ClientError as e:

@@ -1,13 +1,15 @@
 import json
+
 import aio_pika
+from dotenv import load_dotenv
 from loguru import logger
-from config import Settings
+
 from app.scheduler.add_or_remove_schedules import add_schedule_job, remove_schedule_job
 
-settings = Settings()
+load_dotenv()
 
 
-async def consume_schedule_events():
+async def consume_schedule_events(settings):
     connection = await aio_pika.connect_robust(settings.BROKER_DATA)
     channel = await connection.channel()
     queue = await channel.declare_queue("schedules", durable=True)
@@ -29,29 +31,36 @@ async def consume_schedule_events():
                         continue
 
                     if action == "add":
-                        from app.database.models import ChatSchedules
+                        from app.database.models import ChatSchedule
+
                         logger.info(f"➕ Добавление задачи {schedule_id}")
-                        schedule = await ChatSchedules.get(schedule_id=schedule_id).prefetch_related(
-                            'chat', 'prompt', 'bot', 'company'
-                        )
-                        add_schedule_job(schedule)
+                        schedule = await ChatSchedule.get(
+                            schedule_id=schedule_id
+                        ).prefetch_related("chat", "prompt", "bot", "company")
+                        add_schedule_job(schedule, settings)
                         logger.success(
-                            f"✅ Задача {schedule_id} добавлена в планировщик.")
+                            f"✅ Задача {schedule_id} добавлена в планировщик."
+                        )
 
                     elif action == "delete":
                         logger.info(f"➖ Удаление задачи {schedule_id}")
                         try:
                             remove_schedule_job(schedule_id)
                             logger.success(
-                                f"❌ Задача {schedule_id} удалена из планировщика.")
+                                f"❌ Задача {schedule_id} удалена из планировщика."
+                            )
                         except Exception as e:
                             logger.warning(
-                                f"⚠️ Не удалось удалить задачу {schedule_id}: {e}")
+                                f"⚠️ Не удалось удалить задачу {schedule_id}: {e}"
+                            )
 
                     else:
                         logger.warning(
-                            f"⚠️ Неизвестное действие '{action}' для задачи {schedule_id}")
+                            f"""⚠️ Неизвестное действие '{action}'
+                              для задачи {schedule_id}"""
+                        )
 
                 except Exception as e:
                     logger.error(
-                        f"💥 Ошибка при обработке сообщения: {e}", exc_info=True)
+                        f"💥 Ошибка при обработке сообщения: {e}", exc_info=True
+                    )

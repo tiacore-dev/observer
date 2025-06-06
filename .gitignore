@@ -11,8 +11,8 @@ text.txt
 *.so
 
 celery_docker
+docker-compose.dev.yml
 
-beack_up_process_audio
 
 audio_files_examples/
 

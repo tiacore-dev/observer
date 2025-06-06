@@ -1,13 +1,18 @@
 import datetime
 from typing import List, Optional
-from pydantic import BaseModel, UUID4
+
 from fastapi import Query
+from pydantic import BaseModel, Field
 
 
 class ChatSchema(BaseModel):
-    chat_id: int
-    chat_name: str
+    id: int = Field(..., alias="chat_id")
+    name: str = Field(..., alias="chat_name")
     created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
 
 class ChatListSchema(BaseModel):
@@ -16,28 +21,30 @@ class ChatListSchema(BaseModel):
 
 
 def chat_filter_params(
-    chat_name: Optional[str] = Query(
-        None, description="Фильтр по названию бота"),
-    sort_by: Optional[str] = Query(
-        "chat_name", description="Поле сортировки"),
+    chat_name: Optional[str] = Query(None, description="Фильтр по названию бота"),
+    sort_by: Optional[str] = Query("name", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
+    page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
         "chat_name": chat_name,
         "sort_by": sort_by,
         "order": order,
         "page": page,
-        "page_size": page_size
+        "page_size": page_size,
     }
 
 
 class AccountSchema(BaseModel):
-    account_id: int
-    account_name: str
+    id: int = Field(..., alias="account_id")
+    name: str = Field(..., alias="account_name")
     username: str
     created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
 
 class AccountListSchema(BaseModel):
@@ -46,73 +53,14 @@ class AccountListSchema(BaseModel):
 
 
 def account_filter_params(
-    username: Optional[str] = Query(
-        None, description="Фильтр по названию чата"),
-    sort_by: Optional[str] = Query(
-        "username", description="Поле сортировки"),
-    order: Optional[str] = Query("asc", description="asc / desc"),
-    page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
-):
-    return {
-        "username": username,
-        "sort_by": sort_by,
-        "order": order,
-        "page": page,
-        "page_size": page_size
-    }
-
-
-class UserRoleSchema(BaseModel):
-    role_id: UUID4
-    role_name: str
-
-
-class UserRoleListSchema(BaseModel):
-    total: int
-    roles: List[UserRoleSchema]
-
-
-def user_role_filter_params(
-    role_name: Optional[str] = Query(
-        None, description="Фильтр по названию чата"),
-    sort_by: Optional[str] = Query(
-        "role_name", description="Поле сортировки"),
-    order: Optional[str] = Query("asc", description="asc / desc"),
-    page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
-):
-    return {
-        "role_name": role_name,
-        "sort_by": sort_by,
-        "order": order,
-        "page": page,
-        "page_size": page_size
-    }
-
-
-class PermissionSchema(BaseModel):
-    permission_id: str
-    permission_name: str
-    comment: Optional[str] = None
-
-
-class PermissionListSchema(BaseModel):
-    total: int
-    permissions: List[PermissionSchema]
-
-
-def permission_filter_params(
-    permission_name: Optional[str] = Query(
-        None, description="Фильтр по названию роли"),
-    sort_by: Optional[str] = Query(
-        "permission_name", description="Поле сортировки"),
+    username: Optional[str] = Query(None, description="Фильтр по названию чата"),
+    sort_by: Optional[str] = Query("username", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
     page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
-        "permission_name": permission_name,
+        "username": username,
         "sort_by": sort_by,
         "order": order,
         "page": page,

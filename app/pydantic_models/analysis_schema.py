@@ -1,28 +1,32 @@
 import datetime
 from typing import List, Optional
-from pydantic import BaseModel, UUID4, Field
+from uuid import UUID
+
 from fastapi import Query
+from pydantic import Field
+
+from app.pydantic_models.clean_model import CleanableBaseModel
 
 
-class AnalysisCreateSchema(BaseModel):
-    prompt: UUID4 = Field(...)
-    chat: int = Field(...)
+class AnalysisCreateSchema(CleanableBaseModel):
+    prompt_id: UUID = Field(...)
+    chat_id: int = Field(...)
     date_from: int = Field(...)
     date_to: int = Field(...)
-    company: UUID4 = Field(...)
+    company_id: UUID = Field(...)
 
 
-class AnalysisResponseSchema(BaseModel):
-    analysis_id: UUID4
+class AnalysisResponseSchema(CleanableBaseModel):
+    analysis_id: UUID
 
 
-class AnalysisSchema(BaseModel):
-    analysis_id: UUID4
-    prompt: UUID4
-    chat: int
+class AnalysisSchema(CleanableBaseModel):
+    id: UUID = Field(..., alias="analysis_id")
+    prompt_id: UUID
+    chat_id: int
     result_text: str
-    schedule: Optional[UUID4] = None
-    company: UUID4
+    schedule_id: Optional[UUID] = None
+    company_id: UUID
     created_at: datetime.datetime
     date_to: int
     date_from: int
@@ -30,38 +34,45 @@ class AnalysisSchema(BaseModel):
     tokens_output: int
     send_time: Optional[int]
 
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
-class AnalysisShortSchema(BaseModel):
-    analysis_id: UUID4
-    prompt: UUID4
-    chat: int
-    company: UUID4
+
+class AnalysisShortSchema(CleanableBaseModel):
+    id: UUID = Field(..., alias="analysis_id")
+    prompt_id: UUID
+    chat_id: int
+    company_id: UUID
     created_at: datetime.datetime
     tokens_input: int
     tokens_output: int
 
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
-class AnalysisListSchema(BaseModel):
+
+class AnalysisListSchema(CleanableBaseModel):
     total: int
     analysis: List[AnalysisShortSchema]
 
 
 def analysis_filter_params(
-    company: Optional[UUID4] = Query(None),
-    chat: Optional[UUID4] = Query(None),
-    schedule: Optional[UUID4] = Query(None),
-    sort_by: Optional[str] = Query(
-        "created_at", description="Поле сортировки"),
+    company_id: Optional[UUID] = Query(None),
+    chat_id: Optional[UUID] = Query(None),
+    schedule_id: Optional[UUID] = Query(None),
+    sort_by: Optional[str] = Query("created_at", description="Поле сортировки"),
     order: Optional[str] = Query("desc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
-    page_size: Optional[int] = Query(10, ge=1, le=100)
+    page_size: Optional[int] = Query(10, ge=1, le=100),
 ):
     return {
-        "company": company,
-        "chat": chat,
-        "schedule": schedule,
+        "company_id": company_id,
+        "chat_id": chat_id,
+        "schedule_id": schedule_id,
         "sort_by": sort_by,
         "order": order,
         "page": page,
-        "page_size": page_size
+        "page_size": page_size,
     }

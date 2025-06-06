@@ -1,49 +1,45 @@
-from fastapi import APIRouter, Body, HTTPException
-from jose import JWTError, jwt
-from loguru import logger
-from app.handlers.auth_handlers import login_handler, create_refresh_token, create_access_token
-from app.handlers.auth_handlers import SECRET_KEY, ALGORITHM
-from app.pydantic_models.auth_schemas import TokenResponse, LoginRequest
+import aiohttp
+from fastapi import APIRouter, Body, Depends
+from tiacore_lib.config import get_settings
+from tiacore_lib.pydantic_models.auth_models import (
+    LoginRequest,
+    RefreshRequest,
+    TokenResponse,
+)
 
 auth_router = APIRouter()
 
 
-@auth_router.post("/token", response_model=TokenResponse, summary="Авторизация пользователя")
-async def login(data: LoginRequest):
-    user = await login_handler(data.username, data.password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Неверные учетные данные")
+@auth_router.post(
+    "/login", response_model=TokenResponse, summary="Авторизация пользователя"
+)
+async def login(
+    data: LoginRequest,
+    settings=Depends(get_settings),
+):
+    payload = dict(data.model_dump())
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"{settings.AUTH_URL}/api/auth/login",
+            json=payload,
+            timeout=aiohttp.ClientTimeout(total=300),
+        ) as response:
+            response_data = await response.json()
+            return TokenResponse(**response_data)
 
-    return TokenResponse(
-        access_token=create_access_token({"sub": data.username}),
-        refresh_token=create_refresh_token({"sub": data.username}),
-    )
 
-
-@auth_router.post("/refresh", response_model=TokenResponse, summary="Обновление Access Token")
-async def refresh_access_token(data: dict = Body(...)):
-    try:
-
-        refresh_token = data.get("refresh_token")
-        if not refresh_token:
-            raise HTTPException(
-                status_code=400, detail="Refresh token is required")
-        logger.info(f"Полученный токен: {refresh_token}")
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        logger.info(f"Полученный токен: {refresh_token}")
-        if not username:
-            raise HTTPException(status_code=401, detail="Неверный токен")
-
-        new_access_token = create_access_token({"sub": username})
-        new_refresh_token = create_refresh_token({"sub": username})
-
-        return TokenResponse(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token,
-            token_type="bearer"
-        )
-
-    except JWTError as exc:
-        raise HTTPException(
-            status_code=401, detail="Неверный или просроченный токен") from exc
+@auth_router.post(
+    "/refresh", response_model=TokenResponse, summary="Обновление Access Token"
+)
+async def refresh_access_token(
+    data: RefreshRequest = Body(...),
+    settings=Depends(get_settings),
+):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"{settings.AUTH_URL}/api/auth/refresh",
+            json=data.model_dump(),
+            timeout=aiohttp.ClientTimeout(total=300),
+        ) as response:
+            response_data = await response.json()
+            return TokenResponse(**response_data)

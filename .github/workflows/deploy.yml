@@ -27,6 +27,7 @@ jobs:
     env:
       TEST_DATABASE_URL: postgres://test:test@localhost:5432/test_db
       PYTHONUNBUFFERED: 1
+      TEST_DB_HOST: host.docker.internal
 
     steps:
       - name: Checkout code
@@ -43,11 +44,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           install: true
-
+    
       - name: Run Tests in Docker
         run: |
           docker buildx build \
             --target test \
+            --build-arg LIB_REPO_TOKEN=${{ secrets.TOKEN_SHARED_LIB }} \
             --cache-from=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache \
             --cache-to=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache,mode=max \
             --load \
@@ -76,6 +78,8 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache,mode=max
+          build-args: |
+            LIB_REPO_TOKEN=${{ secrets.TOKEN_SHARED_LIB }}
 
 
 
@@ -178,7 +182,7 @@ jobs:
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
           REF_NAME="${{ github.ref_name }}"
           SHA="${{ github.sha }}"
-          AUTHOR="${{ github.event.head_commit.author.name }}"
+          AUTHOR_USERNAME="${{ github.actor }}"
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           DEPLOY_STATUS="${{ needs.deploy.result }}"
@@ -193,14 +197,16 @@ jobs:
 
           CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
 
+          ESCAPED_COMMIT_MESSAGE=$(echo "$COMMIT_MESSAGE" | sed -E 's/([*_`\[\]()])/\\\1/g')
           TEXT="${STATUS}
 
           📦 *Ветка:* \`$REF_NAME\`
           🔖 *Тег:* \`$SHA\`
-          👤 *Автор деплоя:* [$AUTHOR](https://github.com/$AUTHOR)
-          📝 *Коммит:* $COMMIT_MESSAGE${EXTRA_LINK}"
+          👤 *Автор деплоя:* [$AUTHOR_USERNAME](https://github.com/$AUTHOR_USERNAME)
+          📝 *Коммит:* $ESCAPED_COMMIT_MESSAGE${EXTRA_LINK}"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="$CHAT_ID" \
             -d parse_mode=Markdown \
-            -d "text=$TEXT"
+            -d "text=$TEXT" || exit 1
+

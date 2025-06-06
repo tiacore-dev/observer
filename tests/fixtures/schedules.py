@@ -1,42 +1,25 @@
-import datetime
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
 import pytest
-from app.database.models import (
-    ChatSchedules,
-    TargetChats,
-    Chats,
-    Prompts,
-    Companies,
-    Bots
-)
+
+from app.database.models import Bot, Chat, ChatSchedule, Prompt, TargetChat
 
 
 @pytest.fixture
-async def seed_schedule(seed_prompt, seed_chat, seed_company, seed_bot):
-    company = await Companies.get_or_none(company_id=seed_company['company_id'])
-    chat = await Chats.get_or_none(chat_id=seed_chat['chat_id'])
-    prompt = await Prompts.get_or_none(prompt_id=seed_prompt['prompt_id'])
-    bot = await Bots.get_or_none(bot_id=seed_bot['bot_id'])
-    if not company or not chat or not prompt or not bot:
-        raise ValueError(
-            detail="Компания, чат или промпт не найдены")
-    schedule = await ChatSchedules.create(
-        prompt=prompt,
-        chat=chat,
+async def seed_schedule(seed_prompt: Prompt, seed_chat: Chat, seed_bot: Bot):
+    schedule = await ChatSchedule.create(
+        prompt=seed_prompt,
+        chat=seed_chat,
         schedule_type="once",
-        run_at=datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+        run_at=datetime.now(timezone.utc) + timedelta(minutes=5),
         enabled=True,
         send_strategy="fixed",
         time_to_send="16:30:00",
-        company=company,
-        bot=bot
+        company_id=uuid4(),
+        bot=seed_bot,
     )
 
-    await TargetChats.create(schedule=schedule, chat=chat)
+    await TargetChat.create(schedule=schedule, chat=seed_chat)
 
-    return {
-        "schedule_id": str(schedule.schedule_id),
-        "prompt": str(schedule.prompt.prompt_id),
-        "chat": schedule.chat.chat_id,
-        "company": str(schedule.company.company_id),
-        "bot": schedule.bot.bot_id
-    }
+    return schedule

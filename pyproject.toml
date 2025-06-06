@@ -1,0 +1,22 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]  # длинные строки
+
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]  # замени на свой пакет, если другой
+combine-as-imports = true
+
+[tool.mypy]
+python_version = 3.12
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+strict_optional = true
+
+
