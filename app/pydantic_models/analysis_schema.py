@@ -4,8 +4,7 @@ from uuid import UUID
 
 from fastapi import Query
 from pydantic import Field
-
-from app.pydantic_models.clean_model import CleanableBaseModel
+from tiacore_lib.pydantic_models.clean_model import CleanableBaseModel
 
 
 class AnalysisCreateSchema(CleanableBaseModel):

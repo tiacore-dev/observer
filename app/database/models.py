@@ -214,7 +214,7 @@ class Prompt(Model):
     id = fields.UUIDField(pk=True, default=uuid.uuid4)
     name = fields.CharField(max_length=255)
     text = fields.TextField()
-    company_id = fields.UUIDField
+    company_id = fields.UUIDField()
     created_at = fields.DatetimeField(auto_now_add=True)
 
     @property

@@ -4,10 +4,11 @@ from uuid import UUID
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Query
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
+from tiacore_lib.pydantic_models.clean_model import CleanableBaseModel
 
 
-class ScheduleCreateSchema(BaseModel):
+class ScheduleCreateSchema(CleanableBaseModel):
     chat_id: int = Field(...)
     prompt_id: UUID = Field(...)
     schedule_type: str = Field(...)
@@ -74,7 +75,7 @@ class ScheduleCreateSchema(BaseModel):
         return self
 
 
-class ScheduleEditSchema(BaseModel):
+class ScheduleEditSchema(CleanableBaseModel):
     chat_id: Optional[int] = Field(None)
     prompt_id: Optional[UUID] = Field(None)
     schedule_type: Optional[str] = Field(None)
@@ -137,7 +138,7 @@ class ScheduleEditSchema(BaseModel):
         return self
 
 
-class ScheduleSchema(BaseModel):
+class ScheduleSchema(CleanableBaseModel):
     id: UUID = Field(..., alias="schedule_id")
     chat_id: int
     prompt_id: UUID
@@ -166,7 +167,7 @@ class ScheduleSchema(BaseModel):
         populate_by_name = True
 
 
-class ScheduleShortSchema(BaseModel):
+class ScheduleShortSchema(CleanableBaseModel):
     id: UUID = Field(..., alias="schedule_id")
     prompt_id: UUID
     schedule_type: str
@@ -181,12 +182,12 @@ class ScheduleShortSchema(BaseModel):
         populate_by_name = True
 
 
-class ScheduleListSchema(BaseModel):
+class ScheduleListSchema(CleanableBaseModel):
     total: int
     schedules: List[ScheduleShortSchema]
 
 
-class ScheduleResponseSchema(BaseModel):
+class ScheduleResponseSchema(CleanableBaseModel):
     schedule_id: UUID
 
 
