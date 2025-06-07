@@ -13,14 +13,14 @@ services:
     networks:
       - observer_network
 
-    redis:
-      image: redis:7-alpine
-      container_name: redis
-      ports:
-        - "6379:6379"
-      restart: always
-      networks:
-      - observer_network
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+    - observer_network
 
   web:
     image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
