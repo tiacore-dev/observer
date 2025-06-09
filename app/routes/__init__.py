@@ -1,5 +1,6 @@
+from tiacore_lib.routes.auth_route import auth_router
+
 from .analysis_route import analysis_router
-from .auth_route import auth_router
 from .bot_route import bot_router
 from .get_route import get_router
 from .monitoring_route import monitoring_router

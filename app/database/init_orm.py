@@ -7,5 +7,5 @@ async def init_db(settings):
     await Tortoise.init(
         db_url=settings.db_url, modules={"models": ["app.database.models"]}
     )
-    await Tortoise.generate_schemas()
+    # await Tortoise.generate_schemas()
     logger.info("✅ База данных готова")

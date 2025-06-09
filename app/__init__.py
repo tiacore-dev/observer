@@ -1,4 +1,6 @@
+import asyncio
 from contextlib import asynccontextmanager
+from functools import partial
 
 import redis.asyncio as redis
 from fastapi import FastAPI
@@ -6,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from tiacore_lib.config import ConfigName, get_settings
+from tiacore_lib.rabbit.event_consumer import EventConsumer
+from tiacore_lib.rabbit.handlers import handle_user_event
 from tortoise import Tortoise
 
 from app.config import TestConfig, _load_settings
@@ -35,6 +39,17 @@ def create_app(config_name: ConfigName) -> FastAPI:
             redis_client = redis.from_url(redis_url)
             print("🔥 Redis инициализируется")
             FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
+            consumer = EventConsumer(
+                rabbit_url=settings.AUTH_BROKER_URL,
+                queue_name="observer-service",
+                routing_keys=["user.*"],
+            )
+            task = asyncio.create_task(
+                consumer.connect_and_consume(
+                    partial(handle_user_event, settings=settings)
+                )
+            )
+            app.state.rabbit_task = task
 
         yield
 

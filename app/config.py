@@ -22,6 +22,8 @@ class BaseConfig(SharedBaseConfig):
     YANDEX_API_KEY: Optional[str] = None
     FOLDER_ID: Optional[str] = None
 
+    AUTH_BROKER_URL: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -44,6 +46,7 @@ class TestConfig(SharedTestConfig):
     YANDEX_GPT_API_URL: str = ""
     YANDEX_API_KEY: str = ""
     FOLDER_ID: str = ""
+    AUTH_BROKER_URL: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env.test",
