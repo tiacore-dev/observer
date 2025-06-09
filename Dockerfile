@@ -8,9 +8,11 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 # Указываем переменную
 ARG LIB_REPO_TOKEN
 
+ARG CACHE_BUSTER=1
 # Чтобы ARG была доступна на этом слое
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install git+https://x-access-token:${LIB_REPO_TOKEN}@github.com/tiacore-dev/tiacore-lib.git@master
+    pip install git+https://x-access-token:${LIB_REPO_TOKEN}@github.com/tiacore-dev/tiacore-lib.git@master#${CACHE_BUSTER}
+
 
 
 COPY requirements.txt ./

@@ -33,6 +33,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Generate cache buster
+        run: echo "CACHE_BUSTER=$(date +%s)" >> $GITHUB_ENV
+
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -50,6 +53,7 @@ jobs:
           docker buildx build \
             --target test \
             --build-arg LIB_REPO_TOKEN=${{ secrets.TOKEN_SHARED_LIB }} \
+            --build-arg CACHE_BUSTER=${{ env.CACHE_BUSTER }} \
             --cache-from=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache \
             --cache-to=type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache,mode=max \
             --load \
@@ -80,6 +84,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/observer-backend:buildcache,mode=max
           build-args: |
             LIB_REPO_TOKEN=${{ secrets.TOKEN_SHARED_LIB }}
+            CACHE_BUSTER=${{ env.CACHE_BUSTER }}
 
 
 
