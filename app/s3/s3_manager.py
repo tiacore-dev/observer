@@ -18,7 +18,7 @@ class AsyncS3Manager:
     aws_access_key_id = settings.AWS_ACCESS_KEY_ID
     aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY
     bucket_name = settings.BUCKET_NAME
-    bucket_folder = "web_app"
+    bucket_folder = settings.APP
 
     def _get_session(self):
         return aioboto3.Session()
