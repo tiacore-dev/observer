@@ -1,4 +1,6 @@
+from fastapi import FastAPI
 from tiacore_lib.routes.auth_route import auth_router
+from tiacore_lib.routes.company_route import company_router
 
 from .analysis_route import analysis_router
 from .bot_route import bot_router
@@ -9,8 +11,9 @@ from .schedule_route import schedule_router
 from .webhook_route import webhook_router
 
 
-def register_routes(app):
+def register_routes(app: FastAPI):
     app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+    app.include_router(company_router, prefix="/api/companies", tags=["Companies"])
     app.include_router(bot_router, prefix="/api/bots", tags=["Bots"])
     app.include_router(prompt_router, prefix="/api/prompts", tags=["Prompts"])
     app.include_router(webhook_router, prefix="/api/webhook", tags=["Webhooks"])
