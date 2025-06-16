@@ -141,18 +141,25 @@ jobs:
       - name: 🧬 Run Aerich Migrations
         run: |
           echo "📦 Применяем миграции..."
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            DEPLOY_PATH="${{ env.DEPLOY_PATH }}"
-            echo "ℹ️ Переход в директорию \$DEPLOY_PATH"
-            cd \$DEPLOY_PATH || { echo "❌ Нет директории \$DEPLOY_PATH"; exit 1; }
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOF
+            cd $DEPLOY_PATH || exit 1
+            export TAG=\$(grep ^TAG .env | cut -d '=' -f2)
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
 
-            echo "⏳ Ожидаем старт контейнеров..."
-            sleep 5  # при необходимости можешь заменить на wait-for-it или healthcheck
+            set -e
 
-            docker compose -f docker-compose.app.yml run --rm web aerich upgrade \
-              && echo "✅ Миграции применены" \
-              || { echo "❌ Aerich миграции не прошли"; exit 1; }
+            docker run --rm \
+              -v \$(pwd):/app \
+              -v \$(pwd)/.env:/app/.env \
+              -e PYTHONPATH=/app \
+              -e TORTOISE_ORM=app.database.config.TORTOISE_ORM \
+              --network observer_network \
+              \$DOCKERHUB_USERNAME/observer-backend:\$TAG aerich upgrade || {
+                echo "⚠️ Aerich завершился с ошибкой"
+                exit 1
+            }
           EOF
+
 
 
 
