@@ -9,7 +9,6 @@ from metrics.logger import setup_logger
 load_dotenv()
 
 
-# Порт и биндинг
 PORT = 8000
 
 CONFIG_NAME = ConfigName(os.getenv("CONFIG_NAME", "Development"))
@@ -20,7 +19,6 @@ setup_logger()
 app = create_app(config_name=CONFIG_NAME)
 
 
-# 📌 Запуск Uvicorn
 if __name__ == "__main__":
     import uvicorn
 
