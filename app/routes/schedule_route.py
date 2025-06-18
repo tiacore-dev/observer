@@ -37,8 +37,6 @@ async def create_schedule(
     _=Depends(require_permission_in_context("add_schedule")),
     settings=Depends(get_settings),
 ):
-    # Создаем расписание
-
     await validate_exists(Chat, data.chat_id, "Чат")
     await validate_exists(Bot, data.bot_id, "Бот")
     await validate_exists(Prompt, data.prompt_id, "Промпт")
@@ -46,7 +44,6 @@ async def create_schedule(
     try:
         schedule = await ChatSchedule.create(**data.model_dump(exclude_unset=True))
 
-        # Привязываем чаты к расписанию
         if data.target_chats:
             for chat_id in data.target_chats:
                 await TargetChat.create(schedule=schedule, chat_id=chat_id)
