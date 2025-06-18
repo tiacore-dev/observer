@@ -77,9 +77,7 @@ async def telegram_webhook(
     try:
         data = await request.json()
         logger.debug(f"📦 Parsed JSON: {data}")
-        bot = await Bot.get_or_none(
-            secret_token=x_telegram_bot_api_secret_token
-        ).prefetch_related("company")
+        bot = await Bot.get_or_none(secret_token=x_telegram_bot_api_secret_token)
         if not bot:
             logger.warning("⛔ Неверный токен")
             raise HTTPException(status_code=403, detail="Invalid secret token")

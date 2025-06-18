@@ -36,7 +36,7 @@ async def consume_schedule_events(settings):
                         logger.info(f"➕ Добавление задачи {schedule_id}")
                         schedule = await ChatSchedule.get(
                             schedule_id=schedule_id
-                        ).prefetch_related("chat", "prompt", "bot", "company")
+                        ).prefetch_related("chat", "prompt", "bot")
                         add_schedule_job(schedule, settings)
                         logger.success(
                             f"✅ Задача {schedule_id} добавлена в планировщик."
