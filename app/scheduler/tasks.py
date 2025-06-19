@@ -19,7 +19,7 @@ async def analyze(schedule: ChatSchedule, settings):
     """
     Анализирует сообщения в чате за указанный временной промежуток.
     """
-    chat_id = schedule.chat.chat_id
+    chat_id = schedule.chat.id
     logger.info(f"Начало анализа для чата {chat_id}")
     chat = await Chat.get_or_none(id=chat_id)
     if not chat:
@@ -132,7 +132,7 @@ async def save_analysis_result(data):
         logger.info(f"Результат анализа сохранён для чата {data['chat'].id}.")
         return analysis.id
     else:
-        logger.info(f"Для чата {data['chat'].chat_id} нет анализа для сохранения.")
+        logger.info(f"Для чата {data['chat']} нет анализа для сохранения.")
 
 
 async def send_analysis_result(

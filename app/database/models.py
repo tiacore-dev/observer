@@ -171,7 +171,7 @@ class TargetChat(Model):
 
     def __repr__(self):
         return f"""<TargetChats(target_chat_id={self.id}, 
-        chat={self.chat.chat_id})>"""
+        chat={self.chat.id})>"""
 
     class Meta:
         table = "target_chats"
