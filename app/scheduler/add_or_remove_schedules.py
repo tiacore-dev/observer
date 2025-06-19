@@ -36,7 +36,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
             trigger="cron",
             hour=sched.time_of_day.hour,
             minute=sched.time_of_day.minute,
-            args=[sched],
+            args=[sched, settings],
             id=job_id,
             replace_existing=True,
         )
@@ -53,7 +53,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
             trigger="interval",
             hours=hours,
             minutes=minutes,
-            args=[sched],
+            args=[sched, settings],
             id=job_id,
             replace_existing=True,
         )
@@ -75,7 +75,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
         scheduler.add_job(
             execute_analysis,
             trigger=trigger,
-            args=[sched],
+            args=[sched, settings],
             id=job_id,
             replace_existing=True,
         )
@@ -99,7 +99,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
             execute_analysis,
             trigger="date",
             run_date=sched.run_at,
-            args=[sched],
+            args=[sched, settings],
             id=job_id,
             replace_existing=True,
         )
