@@ -43,6 +43,8 @@ services:
     volumes:
       - ./logs:/app/logs
       - .env:/app/.env
+    depends_on:
+      - rabbitmq
     command: >
       python schedule_run.py
     networks:
