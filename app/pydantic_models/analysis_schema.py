@@ -27,8 +27,8 @@ class AnalysisSchema(CleanableBaseModel):
     schedule_id: Optional[UUID] = None
     company_id: UUID
     created_at: datetime.datetime
-    date_to: int
-    date_from: int
+    date_to: datetime.datetime
+    date_from: datetime.datetime
     tokens_input: int
     tokens_output: int
     send_time: Optional[int]

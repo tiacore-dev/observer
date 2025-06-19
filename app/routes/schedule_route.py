@@ -42,7 +42,8 @@ async def create_schedule(
     await validate_exists(Prompt, data.prompt_id, "Промпт")
 
     try:
-        schedule = await ChatSchedule.create(**data.model_dump(exclude_unset=True))
+        schedule_data = data.model_dump(exclude={"target_chats"}, exclude_unset=True)
+        schedule = await ChatSchedule.create(**schedule_data)
 
         if data.target_chats:
             for chat_id in data.target_chats:

@@ -23,6 +23,7 @@ class ChatListSchema(CleanableBaseModel):
 
 def chat_filter_params(
     chat_name: Optional[str] = Query(None, description="Фильтр по названию бота"),
+    bot_id: Optional[int] = Query(None, description="ID бота"),
     sort_by: Optional[str] = Query("name", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),
     page: Optional[int] = Query(1, ge=1),
@@ -30,6 +31,7 @@ def chat_filter_params(
 ):
     return {
         "chat_name": chat_name,
+        "bot_id": bot_id,
         "sort_by": sort_by,
         "order": order,
         "page": page,

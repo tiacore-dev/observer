@@ -29,7 +29,8 @@ async def get_chats(
 
         if filters.get("chat_name"):
             query = query.filter(Q(name__icontains=filters["chat_name"]))
-
+        if filters.get("bot_id"):
+            query = query.filter(bot_relations__bot_id=filters["bot_id"])
         # 🛠️ Маппинг внешнего поля на поле в БД
         sort_field_map = {"chat_name": "name", "created_at": "created_at"}
         sort_by = sort_field_map.get(filters["sort_by"], filters["sort_by"])
