@@ -4,6 +4,7 @@ import unicodedata
 from uuid import UUID
 
 from fastapi import HTTPException
+from loguru import logger
 from pydantic import UUID4
 
 
@@ -53,6 +54,9 @@ async def validate_exists(model_cls, id_value, field_name: str):
     return id_value
 
 
+# если ещё не импортировано
+
+
 def check_company_access(
     object_company_id,
     context: dict,
@@ -62,15 +66,21 @@ def check_company_access(
     """
     Проверяет доступ пользователя к объекту по company_id.
     Возвращает True/False или бросает 403.
-
-    :param object_company_id: company_id объекта
-    :param context: контекст пользователя (суперадмин, company_id и пр.)
-    :param raise_exception: выбросить исключение или вернуть False
     """
     if context.get("is_superadmin"):
         return True
 
-    if str(object_company_id) != context.get("company_id"):
+    expected_id = str(object_company_id)
+    actual_id = str(context.get("company_id"))
+
+    if expected_id != actual_id:
+        logger.warning(
+            f"""❌ Проверка доступа к компании не прошла: 
+            ожидалось {expected_id}, в контексте {actual_id}. """
+            f"""Суперадмин: {context.get("is_superadmin")}, 
+            Пользователь: {context.get("user_id")}"""
+        )
+
         if raise_exception:
             raise HTTPException(
                 status_code=403, detail="Недостаточно прав для компании"
