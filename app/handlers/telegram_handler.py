@@ -32,7 +32,7 @@ async def process_update(data: dict, bot: Bot, settings):
         )
 
         if message_chat["type"] in ["channel", "private"]:
-            logger.debug("⏭ Пропущен тип чата:", message_chat["type"])
+            logger.debug(f"⏭ Пропущен тип чата: {message_chat['type']}")
             return
 
         account, chat = await handle_message_info(user_account, message_chat, bot)
@@ -52,9 +52,9 @@ async def process_update(data: dict, bot: Bot, settings):
         message_id = f"{chat.id}_{message['message_id']}"
 
         if edited:
-            message_obj = await Message.filter(message_id=message_id).first()
+            message_obj = await Message.filter(id=message_id).first()
             if message_obj:
-                message_obj.text = message.get("text")
+                message_obj.text = text or message_obj.text
                 await message_obj.save()
                 logger.info(f"✏️ Сообщение {message_id} обновлено")
             else:
