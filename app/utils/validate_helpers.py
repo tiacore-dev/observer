@@ -51,3 +51,30 @@ async def validate_exists(model_cls, id_value, field_name: str):
     if not await model_cls.exists(id=id_value):
         raise HTTPException(status_code=400, detail=f"{field_name} не найден")
     return id_value
+
+
+def check_company_access(
+    object_company_id,
+    context: dict,
+    *,
+    raise_exception: bool = True,
+) -> bool:
+    """
+    Проверяет доступ пользователя к объекту по company_id.
+    Возвращает True/False или бросает 403.
+
+    :param object_company_id: company_id объекта
+    :param context: контекст пользователя (суперадмин, company_id и пр.)
+    :param raise_exception: выбросить исключение или вернуть False
+    """
+    if context.get("is_superadmin"):
+        return True
+
+    if str(object_company_id) != context.get("company_id"):
+        if raise_exception:
+            raise HTTPException(
+                status_code=403, detail="Недостаточно прав для компании"
+            )
+        return False
+
+    return True

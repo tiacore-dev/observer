@@ -14,6 +14,7 @@ from app.pydantic_models.prompt_schemas import (
     PromptSchema,
     prompt_filter_params,
 )
+from app.utils.validate_helpers import check_company_access
 
 prompt_router = APIRouter()
 
@@ -26,8 +27,9 @@ prompt_router = APIRouter()
 )
 async def add_prompt(
     data: PromptCreateSchema = Body(...),
-    _=Depends(require_permission_in_context("add_prompt")),
+    context=Depends(require_permission_in_context("add_prompt")),
 ):
+    check_company_access(data.company_id, context)
     prompt = await Prompt.create(**data.model_dump(exclude_unset=True))
     if not prompt:
         logger.error("Не удалось создать промпту")
@@ -45,7 +47,7 @@ async def edit_prompt(
         ..., title="ID промпта", description="ID изменяемой промпта"
     ),
     data: PromptEditSchema = Body(...),
-    _=Depends(require_permission_in_context("edit_prompt")),
+    context=Depends(require_permission_in_context("edit_prompt")),
 ):
     logger.info(f"Обновление промпта {prompt_id}")
 
@@ -53,6 +55,7 @@ async def edit_prompt(
     if not prompt:
         logger.warning(f"промпта {prompt_id} не найдена")
         raise HTTPException(status_code=404, detail="промпта не найдена")
+    check_company_access(prompt.company_id, context)
     await prompt.update_from_dict(data.model_dump(exclude_unset=True))
     await prompt.save()
 
@@ -62,12 +65,13 @@ async def edit_prompt(
 )
 async def delete_prompt(
     prompt_id: UUID = Path(..., title="ID промпта", description="ID удаляемой промпта"),
-    _=Depends(require_permission_in_context("delete_prompt")),
+    context=Depends(require_permission_in_context("delete_prompt")),
 ):
     prompt = await Prompt.filter(id=prompt_id).first()
     if not prompt:
         logger.warning(f"промпта {prompt_id} не найдена")
         raise HTTPException(status_code=404, detail="промпта не найдена")
+    check_company_access(prompt.company_id, context)
     await prompt.delete()
 
 
@@ -78,9 +82,16 @@ async def delete_prompt(
 )
 async def get_prompts(
     filters: dict = Depends(prompt_filter_params),
-    _=Depends(require_permission_in_context("get_all_prompts")),
+    context=Depends(require_permission_in_context("get_all_prompts")),
 ):
     query = Q()
+    # Если не суперадмин — ограничить по company_id
+    if not context["is_superadmin"]:
+        if context.get("company_id"):
+            query &= Q(company_id=context["company_id"])
+        else:
+            # Нет доступа ни к одной компании
+            return PromptListResponseSchema(total=0, prompts=[])
 
     if filters.get("company_id"):
         query &= Q(company_id=filters["company_id"])
@@ -119,7 +130,7 @@ async def get_prompt(
     prompt_id: UUID = Path(
         ..., title="ID промпта", description="ID просматриваемого промпта"
     ),
-    _=Depends(require_permission_in_context("view_prompt")),
+    context=Depends(require_permission_in_context("view_prompt")),
 ):
     logger.info(f"Запрос на просмотр промпта: {prompt_id}")
     prompt = (
@@ -131,6 +142,7 @@ async def get_prompt(
     if prompt is None:
         logger.warning(f"Промпт {prompt_id} не найден")
         raise HTTPException(status_code=404, detail="Промпт не найден")
+    check_company_access(prompt["company_id"], context)
 
     prompt_schema = PromptSchema(**prompt)
 

@@ -12,6 +12,7 @@ from app.handlers.telegram_api_url_handlers import (
     set_webhook,
 )
 from app.handlers.telegram_handler import process_update
+from app.utils.validate_helpers import check_company_access
 
 webhook_router = APIRouter()
 
@@ -19,14 +20,14 @@ webhook_router = APIRouter()
 @webhook_router.patch("/{bot_id}/set", status_code=status.HTTP_204_NO_CONTENT)
 async def set_bot_webhook(
     bot_id: int,
-    _=Depends(require_permission_in_context("set_webhook")),
+    context=Depends(require_permission_in_context("set_webhook")),
     settings=Depends(get_settings),
 ):
     bot = await Bot.get_or_none(id=bot_id)
 
     if not bot:
         raise HTTPException(status_code=404, detail="Бот не найден")
-
+    check_company_access(bot.company_id, context)
     try:
         await set_webhook(bot, settings)
     except TelegramAPIError as e:
@@ -39,11 +40,12 @@ async def set_bot_webhook(
 
 @webhook_router.delete("/{bot_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_bot_webhook(
-    bot_id: int, _=Depends(require_permission_in_context("delete_webhook"))
+    bot_id: int, context=Depends(require_permission_in_context("delete_webhook"))
 ):
     bot = await Bot.get_or_none(id=bot_id)
     if not bot:
         raise HTTPException(status_code=404, detail="Бот не найден")
+    check_company_access(bot.company_id, context)
     try:
         await delete_webhook(bot.bot_token)
     except TelegramAPIError as e:
@@ -55,11 +57,12 @@ async def delete_bot_webhook(
 
 @webhook_router.get("/{bot_id}/info")
 async def get_bot_webhook_info(
-    bot_id: int, _=Depends(require_permission_in_context("view_webhook_info"))
+    bot_id: int, context=Depends(require_permission_in_context("view_webhook_info"))
 ):
     bot = await Bot.get_or_none(id=bot_id)
     if not bot:
         raise HTTPException(status_code=404, detail="Бот не найден")
+    check_company_access(bot.company_id, context)
 
     try:
         return await get_webhook_info(bot.bot_token)

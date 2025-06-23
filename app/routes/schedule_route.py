@@ -24,7 +24,7 @@ from app.pydantic_models.schedule_schemas import (
     schedule_filter_params,
 )
 from app.scheduler.scheduler import list_scheduled_jobs
-from app.utils.validate_helpers import validate_exists
+from app.utils.validate_helpers import check_company_access, validate_exists
 
 schedule_router = APIRouter()
 
@@ -34,9 +34,10 @@ schedule_router = APIRouter()
 )
 async def create_schedule(
     data: ScheduleCreateSchema = Body(...),
-    _=Depends(require_permission_in_context("add_schedule")),
+    context=Depends(require_permission_in_context("add_schedule")),
     settings=Depends(get_settings),
 ):
+    check_company_access(data.company_id, context)
     await validate_exists(Chat, data.chat_id, "Чат")
     await validate_exists(Bot, data.bot_id, "Бот")
     await validate_exists(Prompt, data.prompt_id, "Промпт")
@@ -60,12 +61,14 @@ async def create_schedule(
 @schedule_router.patch("/{schedule_id}/toggle", status_code=status.HTTP_204_NO_CONTENT)
 async def toggle_schedule(
     schedule_id: UUID,
-    _=Depends(require_permission_in_context("toggle_schedule")),
+    context=Depends(require_permission_in_context("toggle_schedule")),
     settings=Depends(get_settings),
 ):
     schedule = await ChatSchedule.get_or_none(id=schedule_id)
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
+
+    check_company_access(schedule.company_id, context)
 
     schedule.enabled = not schedule.enabled
     await schedule.save()
@@ -79,14 +82,17 @@ async def toggle_schedule(
 async def edit_schedule(
     schedule_id: UUID,
     data: ScheduleEditSchema = Body(...),
-    _=Depends(require_permission_in_context("edit_schedule")),
+    context=Depends(require_permission_in_context("edit_schedule")),
     settings=Depends(get_settings),
 ):
     updated_data = data.model_dump(exclude_unset=True)
+    updated_data.pop("target_chats", None)
+    updated_data.pop("removed_chats", None)
     schedule = await ChatSchedule.get_or_none(id=schedule_id)
     if not schedule:
         logger.warning(f"Расписание {schedule_id} не найдено")
         raise HTTPException(status_code=404, detail="Расписание не найдено")
+    check_company_access(schedule.company_id, context)
     await publish_schedule_event(schedule_id, settings=settings, action="delete")
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
@@ -124,12 +130,13 @@ async def edit_schedule(
 @schedule_router.delete("/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_schedule(
     schedule_id: UUID,
-    _=Depends(require_permission_in_context("delete_schedule")),
+    context=Depends(require_permission_in_context("delete_schedule")),
     settings=Depends(get_settings),
 ):
     schedule = await ChatSchedule.get_or_none(id=schedule_id)
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
+    check_company_access(schedule.company_id, context)
     await TargetChat.filter(schedule=schedule).delete()
     await schedule.delete()
     logger.success(f"Расписание {schedule_id} удалено")
@@ -143,11 +150,18 @@ async def delete_schedule(
 )
 async def get_schedules(
     filters: dict = Depends(schedule_filter_params),
-    _=Depends(require_permission_in_context("get_all_schedules")),
+    context=Depends(require_permission_in_context("get_all_schedules")),
 ):
     logger.info(f"Запрос на список расписаний: {filters}")
 
     query = Q()
+    # Если не суперадмин — ограничить по company_id
+    if not context["is_superadmin"]:
+        if context.get("company_id"):
+            query &= Q(company_id=context["company_id"])
+        else:
+            # Нет доступа ни к одной компании
+            return ScheduleListSchema(total=0, schedules=[])
 
     if filters.get("company_id"):
         query &= Q(company_id=filters["company_id"])
@@ -194,14 +208,14 @@ async def get_schedules(
 
 @schedule_router.get("/{schedule_id}", response_model=ScheduleSchema)
 async def get_schedule(
-    schedule_id: UUID, _=Depends(require_permission_in_context("view_schedule"))
+    schedule_id: UUID, context=Depends(require_permission_in_context("view_schedule"))
 ):
     schedule = await ChatSchedule.get_or_none(id=schedule_id).prefetch_related(
         "target_chats", "chat", "prompt", "bot"
     )
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
-
+    check_company_access(schedule.company_id, context)
     target_chat_ids = (
         await TargetChat.filter(schedule=schedule).prefetch_related("chat").all()
     )

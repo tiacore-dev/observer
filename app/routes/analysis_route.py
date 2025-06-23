@@ -17,6 +17,7 @@ from app.pydantic_models.analysis_schema import (
     AnalysisShortSchema,
     analysis_filter_params,
 )
+from app.utils.validate_helpers import check_company_access
 from app.yandex_funcs.yandex_funcs import yandex_analyze
 
 analysis_router = APIRouter()
@@ -30,10 +31,11 @@ analysis_router = APIRouter()
 )
 async def create_analysis(
     data: AnalysisCreateSchema = Body(...),
-    _=Depends(require_permission_in_context("create_analysis")),
+    context=Depends(require_permission_in_context("create_analysis")),
     settings=Depends(get_settings),
 ):
     logger.info(f"Создание анализа: {data.model_dump()}")
+    check_company_access(data.company_id, context)
     try:
         await validate_exists(Prompt, data.prompt_id, "Prompt")
         await validate_exists(Chat, data.chat_id, "Chat")
@@ -78,11 +80,18 @@ async def create_analysis(
 )
 async def get_analyses(
     filters: dict = Depends(analysis_filter_params),
-    _=Depends(require_permission_in_context("get_all_analyses")),
+    context=Depends(require_permission_in_context("get_all_analyses")),
 ):
     logger.info(f"Запрос на список анализов: {filters}")
 
     query = Q()
+    # Если не суперадмин — ограничить по company_id
+    if not context["is_superadmin"]:
+        if context.get("company_id"):
+            query &= Q(company_id=context["company_id"])
+        else:
+            # Нет доступа ни к одной компании
+            return AnalysisListSchema(total=0, analysis=[])
 
     if filters.get("company_id"):
         query &= Q(company_id=filters["company_id"])
@@ -129,7 +138,7 @@ async def get_analysis(
     analysis_id: UUID = Path(
         ..., title="ID анализа", description="ID просматриваемого анализа"
     ),
-    _=Depends(require_permission_in_context("view_analysis")),
+    context=Depends(require_permission_in_context("view_analysis")),
 ):
     logger.info(f"Запрос на просмотр анализа: {analysis_id}")
 
@@ -155,6 +164,7 @@ async def get_analysis(
     if analysis is None:
         logger.warning(f"Анализ {analysis_id} не найден")
         raise HTTPException(status_code=404, detail="Анализ не найден")
+    check_company_access(analysis["company_id"], context)
 
     analysis_schema = AnalysisSchema(**analysis)
 
