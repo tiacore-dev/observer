@@ -22,8 +22,7 @@ async def get_chats(
     filters: dict = Depends(chat_filter_params),
     context=Depends(require_permission_in_context("get_all_chats")),
 ):
-    # Начинаем с чатов, но будем фильтровать по связи с ботами
-    query = Chat.filter(bot_relations__bot__isnull=False)
+    query = Chat.filter(Q(bot_relations__bot__id__not_in=[]))
 
     # 🔐 Фильтрация по company_id (через бота)
     if not context["is_superadmin"]:
