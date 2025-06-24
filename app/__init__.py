@@ -37,7 +37,6 @@ def create_app(config_name: ConfigName) -> FastAPI:
             Tortoise.init_models(["app.database.models"], "models")
             redis_url = settings.REDIS_URL
             redis_client = redis.from_url(redis_url)
-            print("🔥 Redis инициализируется")
             FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
             consumer = EventConsumer(
                 rabbit_url=settings.AUTH_BROKER_URL,
