@@ -106,6 +106,8 @@ jobs:
         run: |
           if [[ "${{ github.ref_name }}" == "master" ]]; then
             echo "DEPLOY_PATH=apps/observer-backend" >> $GITHUB_ENV
+          if [[ "${{ github.ref_name }}" == "stage" ]]; then
+            echo "DEPLOY_PATH=apps/observer-backend-stage" >> $GITHUB_ENV
           elif [[ "${{ github.ref_name }}" == "dev" ]]; then
             echo "DEPLOY_PATH=apps/observer-backend-dev" >> $GITHUB_ENV
           else
