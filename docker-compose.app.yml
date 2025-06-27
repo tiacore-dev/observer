@@ -2,11 +2,11 @@
 services:
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq
+    container_name: rabbitmq-${CONFIG_NAME}
     restart: always
     ports:
-      - "5672:5672"     # основной порт
-      - "15672:15672"   # UI для админки
+      - "${RABBIT_PORT}:5672"     
+      - "${RABBIT_UI_PORT}:15672" 
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
@@ -15,16 +15,14 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
+    container_name: redis-${CONFIG_NAME}
     restart: always
     networks:
     - observer_network
 
   web:
     image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
-    container_name: observer
+    container_name: observer-${CONFIG_NAME}
     restart: always
     ports:
       - "${PORT}:8000"
@@ -38,7 +36,7 @@ services:
 
   scheduler:
     image: ${DOCKERHUB_USERNAME}/observer-backend:${TAG}
-    container_name: scheduler
+    container_name: scheduler-${CONFIG_NAME}
     restart: always
     volumes:
       - ./logs:/app/logs
