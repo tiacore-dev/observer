@@ -12,6 +12,7 @@ class ScheduleCreateSchema(CleanableBaseModel):
     chat_id: int = Field(...)
     prompt_id: UUID = Field(...)
     schedule_type: str = Field(...)
+    message_intro: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = Field(None)
     interval_minutes: Optional[int] = Field(None)
@@ -53,9 +54,7 @@ class ScheduleCreateSchema(CleanableBaseModel):
                     )
             case "daily_time":
                 if self.time_of_day is None:
-                    raise ValueError(
-                        "Для типа daily_time необходимо указать time_of_day"
-                    )
+                    raise ValueError("Для типа daily_time необходимо указать time_of_day")
             case "cron":
                 if self.cron_expression is None:
                     raise ValueError("Для типа cron необходимо указать cron_expression")
@@ -68,9 +67,7 @@ class ScheduleCreateSchema(CleanableBaseModel):
             raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
 
         if self.send_strategy == "relative" and self.send_after_minutes is None:
-            raise ValueError(
-                "Для стратегии 'relative' необходимо указать send_after_minutes"
-            )
+            raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
 
         return self
 
@@ -79,6 +76,7 @@ class ScheduleEditSchema(CleanableBaseModel):
     chat_id: Optional[int] = Field(None)
     prompt_id: Optional[UUID] = Field(None)
     schedule_type: Optional[str] = Field(None)
+    message_intro: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = Field(None)
     interval_minutes: Optional[int] = Field(None)
@@ -110,12 +108,8 @@ class ScheduleEditSchema(CleanableBaseModel):
     @model_validator(mode="after")
     def validate_schedule_edit(self):
         # Тип расписания
-        if self.schedule_type == "interval" and not (
-            self.interval_hours or self.interval_minutes
-        ):
-            raise ValueError(
-                "Для типа interval нужно указать interval_hours или interval_minutes"
-            )
+        if self.schedule_type == "interval" and not (self.interval_hours or self.interval_minutes):
+            raise ValueError("Для типа interval нужно указать interval_hours или interval_minutes")
 
         if self.schedule_type == "daily_time" and not self.time_of_day:
             raise ValueError("Для типа daily_time нужно указать time_of_day")
@@ -131,9 +125,7 @@ class ScheduleEditSchema(CleanableBaseModel):
             raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
 
         if self.send_strategy == "relative" and self.send_after_minutes is None:
-            raise ValueError(
-                "Для стратегии 'relative' необходимо указать send_after_minutes"
-            )
+            raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
 
         return self
 
@@ -144,6 +136,7 @@ class ScheduleSchema(CleanableBaseModel):
     prompt_id: UUID
     company_id: UUID
     schedule_type: str
+    message_intro: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = None
     interval_minutes: Optional[int] = None

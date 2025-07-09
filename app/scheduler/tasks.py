@@ -52,9 +52,7 @@ async def analyze(schedule: ChatSchedule, settings):
 
     try:
         messages = (
-            await Message.filter(
-                chat=chat, timestamp__gte=analysis_start, timestamp__lte=analysis_end
-            )
+            await Message.filter(chat=chat, timestamp__gte=analysis_start, timestamp__lte=analysis_end)
             .order_by("timestamp")
             .prefetch_related("account", "chat")
             .all()
@@ -87,9 +85,7 @@ async def analyze(schedule: ChatSchedule, settings):
         if not prompt:
             raise ValueError(f"Промпт с ID {schedule.prompt.id} не найден.")
 
-        analysis_result, tokens_input, tokens_output = await yandex_analyze(
-            prompt.id, messages, settings
-        )
+        analysis_result, tokens_input, tokens_output = await yandex_analyze(prompt.id, messages, settings)
 
     except Exception as e:
         logger.error(f"Ошибка при анализе сообщений: {e}")
@@ -135,9 +131,7 @@ async def save_analysis_result(data):
         logger.info(f"Для чата {data['chat']} нет анализа для сохранения.")
 
 
-async def send_analysis_result(
-    target_chats: list[Chat], chat_name, bot_token, analysis_result
-):
+async def send_analysis_result(target_chats: list[Chat], chat_name, bot_token, analysis_result, message_intro):
     """
     Отправляет результат анализа в Telegram.
     """
@@ -146,7 +140,7 @@ async def send_analysis_result(
     me = await bot.get_me()
     logger.debug(f"🤖 Бот: {me.username} ({me.id})")
 
-    message_text = f"""Результат анализа для чата {chat_name}:\n\n{analysis_result}"""
+    message_text = f"""{message_intro}{analysis_result}"""
 
     try:
         for chat in target_chats:

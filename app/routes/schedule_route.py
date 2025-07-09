@@ -29,9 +29,7 @@ from app.utils.validate_helpers import check_company_access, validate_exists
 schedule_router = APIRouter()
 
 
-@schedule_router.post(
-    "/add", response_model=ScheduleResponseSchema, status_code=status.HTTP_201_CREATED
-)
+@schedule_router.post("/add", response_model=ScheduleResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_schedule(
     data: ScheduleCreateSchema = Body(...),
     context=Depends(require_permission_in_context("add_schedule")),
@@ -175,9 +173,7 @@ async def get_schedules(
     if filters.get("enabled") is not None:
         query &= Q(enabled=filters["enabled"])
 
-    order_by = f"{'-' if filters.get('order') == 'desc' else ''}{
-        filters.get('sort_by', 'created_at')
-    }"
+    order_by = f"{'-' if filters.get('order') == 'desc' else ''}{filters.get('sort_by', 'created_at')}"
     page = filters.get("page", 1)
     page_size = filters.get("page_size", 10)
 
@@ -189,16 +185,7 @@ async def get_schedules(
         .offset((page - 1) * page_size)
         .limit(page_size)
         .prefetch_related("chat", "prompt")
-        .values(
-            "id",
-            "prompt_id",
-            "schedule_type",
-            "enabled",
-            "company_id",
-            "chat_id",
-            "created_at",
-            "bot_id",
-        )
+        .values("id", "prompt_id", "schedule_type", "enabled", "company_id", "chat_id", "created_at", "bot_id", "message_intro")
     )
     return ScheduleListSchema(
         total=total_count,
@@ -207,23 +194,18 @@ async def get_schedules(
 
 
 @schedule_router.get("/{schedule_id}", response_model=ScheduleSchema)
-async def get_schedule(
-    schedule_id: UUID, context=Depends(require_permission_in_context("view_schedule"))
-):
-    schedule = await ChatSchedule.get_or_none(id=schedule_id).prefetch_related(
-        "target_chats", "chat", "prompt", "bot"
-    )
+async def get_schedule(schedule_id: UUID, context=Depends(require_permission_in_context("view_schedule"))):
+    schedule = await ChatSchedule.get_or_none(id=schedule_id).prefetch_related("target_chats", "chat", "prompt", "bot")
     if not schedule:
         raise HTTPException(status_code=404, detail="Расписание не найдено")
     check_company_access(schedule.company_id, context)
-    target_chat_ids = (
-        await TargetChat.filter(schedule=schedule).prefetch_related("chat").all()
-    )
+    target_chat_ids = await TargetChat.filter(schedule=schedule).prefetch_related("chat").all()
     target_chats = [target_chat.chat.id for target_chat in target_chat_ids]
     return ScheduleSchema(
         schedule_id=schedule.id,
         prompt_id=schedule.prompt.id,
         chat_id=schedule.chat.id,
+        message_intro=schedule.message_intro,
         schedule_type=schedule.schedule_type,
         interval_hours=schedule.interval_hours,
         interval_minutes=schedule.interval_minutes,

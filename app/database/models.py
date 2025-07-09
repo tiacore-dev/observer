@@ -76,12 +76,8 @@ class Bot(Model):
 
 class BotChatRelation(Model):
     id = fields.UUIDField(pk=True, default=uuid.uuid4)
-    bot = fields.ForeignKeyField(
-        "models.Bot", related_name="bot_relations", on_delete=fields.CASCADE
-    )
-    chat = fields.ForeignKeyField(
-        "models.Chat", related_name="bot_relations", on_delete=fields.CASCADE
-    )
+    bot = fields.ForeignKeyField("models.Bot", related_name="bot_relations", on_delete=fields.CASCADE)
+    chat = fields.ForeignKeyField("models.Chat", related_name="bot_relations", on_delete=fields.CASCADE)
     is_admin = fields.BooleanField(default=False)
 
     def __repr__(self):
@@ -140,14 +136,15 @@ class ChatSchedule(Model):
 
     created_at = fields.DatetimeField(auto_now_add=True)
 
-    send_strategy = fields.CharField(
-        max_length=10, default="fixed"
-    )  # fixed или relative
+    send_strategy = fields.CharField(max_length=10, default="fixed")  # fixed или relative
     send_after_minutes = fields.IntField(null=True)
     time_to_send = fields.TimeField(null=True)
     company_id = fields.UUIDField()
 
     bot = fields.ForeignKeyField("models.Bot", related_name="schedules")
+
+    message_intro = fields.CharField(max_length=255, null=True)
+
     target_chats: ReverseRelation["TargetChat"]
 
     @property
@@ -164,9 +161,7 @@ class ChatSchedule(Model):
 
 class TargetChat(Model):
     id = fields.UUIDField(pk=True, default=uuid.uuid4)
-    schedule = fields.ForeignKeyField(
-        "models.ChatSchedule", related_name="target_chats"
-    )
+    schedule = fields.ForeignKeyField("models.ChatSchedule", related_name="target_chats")
     chat = fields.ForeignKeyField("models.Chat", related_name="target_chats")
 
     def __repr__(self):
@@ -183,9 +178,7 @@ class AnalysisResult(Model):
     prompt = fields.ForeignKeyField("models.Prompt", related_name="analysis")
     result_text = fields.TextField()
     chat = fields.ForeignKeyField("models.Chat", related_name="analysis_results")
-    schedule = fields.ForeignKeyField(
-        "models.ChatSchedule", related_name="analysis_results", null=True
-    )
+    schedule = fields.ForeignKeyField("models.ChatSchedule", related_name="analysis_results", null=True)
     company_id = fields.UUIDField()
     created_at = fields.DatetimeField(auto_now_add=True)
 
