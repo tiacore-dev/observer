@@ -139,7 +139,8 @@ async def send_analysis_result(target_chats: list[Chat], chat_name, bot_token, a
 
     me = await bot.get_me()
     logger.debug(f"🤖 Бот: {me.username} ({me.id})")
-
+    if not message_intro:
+        message_intro = ""
     message_text = f"""{message_intro}{analysis_result}"""
 
     try:
