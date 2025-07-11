@@ -105,7 +105,7 @@ async def send_tasks(schedule: ChatSchedule, analysis_id):
 
         try:
             logger.info(f"Обработка чата: {chat.id}.")
-            # Получаем результат анализа за последние 24 часа
+            # Получаем результат анализа за последние 2ы4 часа
             analysis = await AnalysisResult.get_or_none(id=analysis_id)
             target_chat_relations = await TargetChat.filter(schedule=schedule).prefetch_related("chat").all()
             target_chats = [target_chat_relation.chat for target_chat_relation in target_chat_relations]
@@ -114,10 +114,14 @@ async def send_tasks(schedule: ChatSchedule, analysis_id):
                 raise ValueError()
             if analysis:
                 logger.info(f"""Результат анализа найден для чата {chat.id}.""")
-                await send_analysis_result(target_chats, chat.name, bot.bot_token, analysis.result_text, schedule.message_intro)
+                await send_analysis_result(
+                    target_chats, chat.name, bot.bot_token, analysis.result_text, schedule.message_intro
+                )
             else:
                 logger.warning(f"""Результат анализа для чата {chat.id} за последние 24 часа не найден.""")
-                await send_analysis_result(target_chats, chat.name, bot.bot_token, "Результат анализа не найден.", schedule.message_intro)
+                await send_analysis_result(
+                    target_chats, chat.name, bot.bot_token, "Результат анализа не найден.", schedule.message_intro
+                )
             logger.info(f"Задача выполнена для чата {chat.id}.")
         except Exception as e:
             logger.error(
