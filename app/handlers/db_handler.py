@@ -23,22 +23,16 @@ async def handle_message_info(user_account: dict, message_chat: dict, bot: Bot):
             )
             logger.debug(f"🆕 Новый аккаунт: @{account.name} (ID: {account.id})")
 
-        _, acc_rel_created = await AccountCompanyRelation.get_or_create(
-            account=account, company_id=bot.company_id
-        )
+        _, acc_rel_created = await AccountCompanyRelation.get_or_create(account=account, company_id=bot.company_id)
         if acc_rel_created:
-            logger.info(
-                f"📎 Связь аккаунта с компанией создана: {account.id} ↔ {bot.id}"
-            )
+            logger.info(f"📎 Связь аккаунта с компанией создана: {account.id} ↔ {bot.id}")
 
         chat = await Chat.get_or_none(id=message_chat["id"])
         if not chat:
             chat = await Chat.create(id=message_chat["id"], name=message_chat["title"])
             logger.debug(f"🆕 Новый чат: {chat.name} (ID: {chat.id})")
 
-        _, bot_chat_rel_created = await BotChatRelation.get_or_create(
-            chat=chat, bot=bot
-        )
+        _, bot_chat_rel_created = await BotChatRelation.get_or_create(chat=chat, bot=bot)
         if bot_chat_rel_created:
             logger.info(f"🤖 Связь бота с чатом создана: {bot.id} ↔ {chat.id}")
 

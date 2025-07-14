@@ -11,7 +11,7 @@ async def process_update(data: dict, bot: Bot, settings):
     try:
         message = None
         edited = None
-
+        logger.debug(f"Пришло сообщение: {data}")
         if data.get("message"):
             message = data["message"]
             edited = False
@@ -58,9 +58,7 @@ async def process_update(data: dict, bot: Bot, settings):
                 await message_obj.save()
                 logger.info(f"✏️ Сообщение {message_id} обновлено")
             else:
-                logger.warning(
-                    f"🧐 Попытка обновить несуществующее сообщение: {message_id}"
-                )
+                logger.warning(f"🧐 Попытка обновить несуществующее сообщение: {message_id}")
         else:
             await Message.create(
                 id=message_id,

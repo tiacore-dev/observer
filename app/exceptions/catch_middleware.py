@@ -1,4 +1,5 @@
 import traceback
+
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -13,8 +14,7 @@ class CatchAllExceptionsMiddleware(BaseHTTPMiddleware):
                 logger.error("🚨 400 Bad Request от FastAPI")
                 logger.error(f"➡️ URL: {request.url}")
                 logger.error(f"➡️ Headers: {dict(request.headers)}")
-                logger.error(
-                    f"➡️ Body: {body.decode('utf-8', errors='ignore')}")
+                logger.error(f"➡️ Body: {body.decode('utf-8', errors='ignore')}")
             return response
         except Exception as e:
             tb = traceback.format_exc()

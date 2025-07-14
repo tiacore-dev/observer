@@ -185,7 +185,17 @@ async def get_schedules(
         .offset((page - 1) * page_size)
         .limit(page_size)
         .prefetch_related("chat", "prompt")
-        .values("id", "prompt_id", "schedule_type", "enabled", "company_id", "chat_id", "created_at", "bot_id", "message_intro")
+        .values(
+            "id",
+            "prompt_id",
+            "schedule_type",
+            "enabled",
+            "company_id",
+            "chat_id",
+            "created_at",
+            "bot_id",
+            "message_intro",
+        )
     )
     return ScheduleListSchema(
         total=total_count,
