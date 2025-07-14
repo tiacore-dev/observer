@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, time
 from typing import List, Literal, Optional
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -17,9 +17,9 @@ class ScheduleCreateSchema(CleanableBaseModel):
 
     interval_hours: Optional[int] = Field(None)
     interval_minutes: Optional[int] = Field(None)
-    time_of_day: Optional[datetime.time] = Field(None)
+    time_of_day: Optional[time] = Field(None)
     cron_expression: Optional[str] = Field(None)
-    run_at: Optional[datetime.datetime] = Field(None)
+    run_at: Optional[datetime] = Field(None)
 
     company_id: UUID = Field(...)
     target_chats: List[int] = Field(...)
@@ -30,7 +30,7 @@ class ScheduleCreateSchema(CleanableBaseModel):
         ...,
         description="fixed — в указанное время, relative — через X минут после анализа",
     )
-    time_to_send: Optional[datetime.time] = Field(None)
+    time_to_send: Optional[time] = Field(None)
     send_after_minutes: Optional[int] = Field(None)
 
     @field_validator("cron_expression")
@@ -74,7 +74,7 @@ class ScheduleCreateSchema(CleanableBaseModel):
 
     @model_validator(mode="before")
     def normalize_datetime_fields(cls, values: dict):
-        def to_naive_utc(dt: datetime.datetime) -> datetime.datetime:
+        def to_naive_utc(dt: datetime) -> datetime:
             return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
 
         if run_at := values.get("run_at"):
@@ -82,12 +82,12 @@ class ScheduleCreateSchema(CleanableBaseModel):
                 values["run_at"] = to_naive_utc(run_at)
 
         if time_to_send := values.get("time_to_send"):
-            if isinstance(time_to_send, datetime.time) and time_to_send.tzinfo:
+            if isinstance(time_to_send, time) and time_to_send.tzinfo:
                 # В Pydantic могут передать time с tzinfo — убираем
                 values["time_to_send"] = time_to_send.replace(tzinfo=None)
 
         if time_of_day := values.get("time_of_day"):
-            if isinstance(time_of_day, datetime.time) and time_of_day.tzinfo:
+            if isinstance(time_of_day, time) and time_of_day.tzinfo:
                 values["time_of_day"] = time_of_day.replace(tzinfo=None)
 
         return values
@@ -101,9 +101,9 @@ class ScheduleEditSchema(CleanableBaseModel):
 
     interval_hours: Optional[int] = Field(None)
     interval_minutes: Optional[int] = Field(None)
-    time_of_day: Optional[datetime.time] = Field(None)
+    time_of_day: Optional[time] = Field(None)
     cron_expression: Optional[str] = Field(None)
-    run_at: Optional[datetime.datetime] = Field(None)
+    run_at: Optional[datetime] = Field(None)
 
     target_chats: Optional[List[int]] = Field(None)
     removed_chats: Optional[List[int]] = Field(None)
@@ -111,7 +111,7 @@ class ScheduleEditSchema(CleanableBaseModel):
     enabled: Optional[bool] = Field(None)
 
     send_strategy: Optional[Literal["fixed", "relative"]] = Field(None)
-    time_to_send: Optional[datetime.time] = Field(None)
+    time_to_send: Optional[time] = Field(None)
     send_after_minutes: Optional[int] = Field(None)
 
     company_id: Optional[UUID] = Field(None)
@@ -152,7 +152,7 @@ class ScheduleEditSchema(CleanableBaseModel):
 
     @model_validator(mode="before")
     def normalize_datetime_fields(cls, values: dict):
-        def to_naive_utc(dt: datetime.datetime) -> datetime.datetime:
+        def to_naive_utc(dt: datetime) -> datetime:
             return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
 
         if run_at := values.get("run_at"):
@@ -160,12 +160,12 @@ class ScheduleEditSchema(CleanableBaseModel):
                 values["run_at"] = to_naive_utc(run_at)
 
         if time_to_send := values.get("time_to_send"):
-            if isinstance(time_to_send, datetime.time) and time_to_send.tzinfo:
+            if isinstance(time_to_send, time) and time_to_send.tzinfo:
                 # В Pydantic могут передать time с tzinfo — убираем
                 values["time_to_send"] = time_to_send.replace(tzinfo=None)
 
         if time_of_day := values.get("time_of_day"):
-            if isinstance(time_of_day, datetime.time) and time_of_day.tzinfo:
+            if isinstance(time_of_day, time) and time_of_day.tzinfo:
                 values["time_of_day"] = time_of_day.replace(tzinfo=None)
 
         return values
@@ -181,15 +181,15 @@ class ScheduleSchema(CleanableBaseModel):
 
     interval_hours: Optional[int] = None
     interval_minutes: Optional[int] = None
-    time_of_day: Optional[datetime.time] = None
+    time_of_day: Optional[time] = None
     cron_expression: Optional[str] = None
-    run_at: Optional[datetime.datetime] = None
+    run_at: Optional[datetime] = None
 
     enabled: bool
-    last_run_at: Optional[datetime.datetime] = None
-    created_at: datetime.datetime
+    last_run_at: Optional[datetime] = None
+    created_at: datetime
     send_strategy: str
-    time_to_send: Optional[datetime.time] = None
+    time_to_send: Optional[time] = None
     send_after_minutes: Optional[int] = None
 
     bot_id: int
@@ -208,7 +208,7 @@ class ScheduleShortSchema(CleanableBaseModel):
     enabled: bool
     company_id: UUID
     chat_id: int
-    created_at: datetime.datetime
+    created_at: datetime
     bot_id: int
 
     class Config:
