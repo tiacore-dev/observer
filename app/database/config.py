@@ -21,4 +21,6 @@ TORTOISE_ORM = {
             "default_connection": "default",
         },
     },
+    "use_tz": False,  # <--- обязательно
+    "timezone": "UTC",
 }

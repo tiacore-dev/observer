@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Literal, Optional
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Query
@@ -71,6 +72,26 @@ class ScheduleCreateSchema(CleanableBaseModel):
 
         return self
 
+    @model_validator(mode="before")
+    def normalize_datetime_fields(cls, values: dict):
+        def to_naive_utc(dt: datetime.datetime) -> datetime.datetime:
+            return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+
+        if run_at := values.get("run_at"):
+            if isinstance(run_at, datetime) and run_at.tzinfo:
+                values["run_at"] = to_naive_utc(run_at)
+
+        if time_to_send := values.get("time_to_send"):
+            if isinstance(time_to_send, datetime.time) and time_to_send.tzinfo:
+                # В Pydantic могут передать time с tzinfo — убираем
+                values["time_to_send"] = time_to_send.replace(tzinfo=None)
+
+        if time_of_day := values.get("time_of_day"):
+            if isinstance(time_of_day, datetime.time) and time_of_day.tzinfo:
+                values["time_of_day"] = time_of_day.replace(tzinfo=None)
+
+        return values
+
 
 class ScheduleEditSchema(CleanableBaseModel):
     chat_id: Optional[int] = Field(None)
@@ -128,6 +149,26 @@ class ScheduleEditSchema(CleanableBaseModel):
             raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
 
         return self
+
+    @model_validator(mode="before")
+    def normalize_datetime_fields(cls, values: dict):
+        def to_naive_utc(dt: datetime.datetime) -> datetime.datetime:
+            return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+
+        if run_at := values.get("run_at"):
+            if isinstance(run_at, datetime) and run_at.tzinfo:
+                values["run_at"] = to_naive_utc(run_at)
+
+        if time_to_send := values.get("time_to_send"):
+            if isinstance(time_to_send, datetime.time) and time_to_send.tzinfo:
+                # В Pydantic могут передать time с tzinfo — убираем
+                values["time_to_send"] = time_to_send.replace(tzinfo=None)
+
+        if time_of_day := values.get("time_of_day"):
+            if isinstance(time_of_day, datetime.time) and time_of_day.tzinfo:
+                values["time_of_day"] = time_of_day.replace(tzinfo=None)
+
+        return values
 
 
 class ScheduleSchema(CleanableBaseModel):
