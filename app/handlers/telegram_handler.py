@@ -28,6 +28,9 @@ async def process_update(data: dict, bot: Bot, settings):
             f"""💬 Сообщение от @{user_account.get("username")} в
               {message_chat.get("title")} ({message_chat.get("id")})"""
         )
+        logger.debug(
+            f"📌 Тип чата: {message_chat.get('type')}, ID: {message_chat.get('id')}, title: {message_chat.get('title')}"
+        )
 
         if message_chat.get("type") in {"channel", "private"}:
             logger.debug(f"⏭ Пропущен тип чата: {message_chat.get('type')}")
