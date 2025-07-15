@@ -8,7 +8,7 @@ from tiacore_lib.pydantic_models.clean_model import CleanableBaseModel
 
 class ChatSchema(CleanableBaseModel):
     id: int = Field(..., alias="chat_id")
-    name: str = Field(..., alias="chat_name")
+    name: Optional[str] = Field(None, alias="chat_name")
     created_at: datetime.datetime
 
     class Config:
@@ -41,8 +41,8 @@ def chat_filter_params(
 
 class AccountSchema(CleanableBaseModel):
     id: int = Field(..., alias="account_id")
-    name: str = Field(..., alias="account_name")
-    username: str
+    name: Optional[str] = Field(None, alias="account_name")
+    username: Optional[str] = Field(None)
     created_at: datetime.datetime
 
     class Config:
