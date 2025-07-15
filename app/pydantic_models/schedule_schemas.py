@@ -1,7 +1,6 @@
 from datetime import datetime, time
 from typing import List, Literal, Optional
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Query
@@ -72,26 +71,26 @@ class ScheduleCreateSchema(CleanableBaseModel):
 
         return self
 
-    @model_validator(mode="before")
-    def normalize_datetime_fields(cls, values: dict):
-        utc = ZoneInfo("UTC")
+    # @model_validator(mode="before")
+    # def normalize_datetime_fields(cls, values: dict):
+    #     utc = ZoneInfo("UTC")
 
-        def to_utc(dt: datetime) -> datetime:
-            return dt.astimezone(utc)
+    #     def to_utc(dt: datetime) -> datetime:
+    #         return dt.astimezone(utc)
 
-        if run_at := values.get("run_at"):
-            if isinstance(run_at, datetime):
-                values["run_at"] = to_utc(run_at)
+    #     if run_at := values.get("run_at"):
+    #         if isinstance(run_at, datetime):
+    #             values["run_at"] = to_utc(run_at)
 
-        if time_to_send := values.get("time_to_send"):
-            if isinstance(time_to_send, time) and time_to_send.tzinfo:
-                values["time_to_send"] = time_to_send.replace(tzinfo=None)
+    #     if time_to_send := values.get("time_to_send"):
+    #         if isinstance(time_to_send, time) and time_to_send.tzinfo:
+    #             values["time_to_send"] = time_to_send.replace(tzinfo=None)
 
-        if time_of_day := values.get("time_of_day"):
-            if isinstance(time_of_day, time) and time_of_day.tzinfo:
-                values["time_of_day"] = time_of_day.replace(tzinfo=None)
+    #     if time_of_day := values.get("time_of_day"):
+    #         if isinstance(time_of_day, time) and time_of_day.tzinfo:
+    #             values["time_of_day"] = time_of_day.replace(tzinfo=None)
 
-        return values
+    #     return values
 
 
 class ScheduleEditSchema(CleanableBaseModel):
@@ -151,26 +150,26 @@ class ScheduleEditSchema(CleanableBaseModel):
 
         return self
 
-    @model_validator(mode="before")
-    def normalize_datetime_fields(cls, values: dict):
-        utc = ZoneInfo("UTC")
+    # @model_validator(mode="before")
+    # def normalize_datetime_fields(cls, values: dict):
+    #     utc = ZoneInfo("UTC")
 
-        def to_utc(dt: datetime) -> datetime:
-            return dt.astimezone(utc)
+    #     def to_utc(dt: datetime) -> datetime:
+    #         return dt.astimezone(utc)
 
-        if run_at := values.get("run_at"):
-            if isinstance(run_at, datetime):
-                values["run_at"] = to_utc(run_at)
+    #     if run_at := values.get("run_at"):
+    #         if isinstance(run_at, datetime):
+    #             values["run_at"] = to_utc(run_at)
 
-        if time_to_send := values.get("time_to_send"):
-            if isinstance(time_to_send, time) and time_to_send.tzinfo:
-                values["time_to_send"] = time_to_send.replace(tzinfo=None)
+    #     if time_to_send := values.get("time_to_send"):
+    #         if isinstance(time_to_send, time) and time_to_send.tzinfo:
+    #             values["time_to_send"] = time_to_send.replace(tzinfo=None)
 
-        if time_of_day := values.get("time_of_day"):
-            if isinstance(time_of_day, time) and time_of_day.tzinfo:
-                values["time_of_day"] = time_of_day.replace(tzinfo=None)
+    #     if time_of_day := values.get("time_of_day"):
+    #         if isinstance(time_of_day, time) and time_of_day.tzinfo:
+    #             values["time_of_day"] = time_of_day.replace(tzinfo=None)
 
-        return values
+    #     return values
 
 
 class ScheduleSchema(CleanableBaseModel):
