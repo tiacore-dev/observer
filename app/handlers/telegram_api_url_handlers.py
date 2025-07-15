@@ -9,9 +9,7 @@ from app.database.models import Bot
 from app.utils.aiohttp_helpers import fetch_bytes, fetch_json
 
 
-async def validate_token_and_register(
-    token: str, company_id: UUID, comment: str | None
-) -> Bot:
+async def validate_token_and_register(token: str, company_id: UUID, comment: str | None) -> Bot:
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://api.telegram.org/bot{token}/getMe") as resp:
             data = await resp.json()

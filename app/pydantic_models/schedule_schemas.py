@@ -74,16 +74,17 @@ class ScheduleCreateSchema(CleanableBaseModel):
 
     @model_validator(mode="before")
     def normalize_datetime_fields(cls, values: dict):
-        def to_naive_utc(dt: datetime) -> datetime:
-            return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        utc = ZoneInfo("UTC")
+
+        def to_utc(dt: datetime) -> datetime:
+            return dt.astimezone(utc)
 
         if run_at := values.get("run_at"):
-            if isinstance(run_at, datetime) and run_at.tzinfo:
-                values["run_at"] = to_naive_utc(run_at)
+            if isinstance(run_at, datetime):
+                values["run_at"] = to_utc(run_at)
 
         if time_to_send := values.get("time_to_send"):
             if isinstance(time_to_send, time) and time_to_send.tzinfo:
-                # В Pydantic могут передать time с tzinfo — убираем
                 values["time_to_send"] = time_to_send.replace(tzinfo=None)
 
         if time_of_day := values.get("time_of_day"):
@@ -152,16 +153,17 @@ class ScheduleEditSchema(CleanableBaseModel):
 
     @model_validator(mode="before")
     def normalize_datetime_fields(cls, values: dict):
-        def to_naive_utc(dt: datetime) -> datetime:
-            return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        utc = ZoneInfo("UTC")
+
+        def to_utc(dt: datetime) -> datetime:
+            return dt.astimezone(utc)
 
         if run_at := values.get("run_at"):
-            if isinstance(run_at, datetime) and run_at.tzinfo:
-                values["run_at"] = to_naive_utc(run_at)
+            if isinstance(run_at, datetime):
+                values["run_at"] = to_utc(run_at)
 
         if time_to_send := values.get("time_to_send"):
             if isinstance(time_to_send, time) and time_to_send.tzinfo:
-                # В Pydantic могут передать time с tzinfo — убираем
                 values["time_to_send"] = time_to_send.replace(tzinfo=None)
 
         if time_of_day := values.get("time_of_day"):

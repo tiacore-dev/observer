@@ -4,6 +4,9 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 
 # Указываем переменную
 ARG LIB_REPO_TOKEN
