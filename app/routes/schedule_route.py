@@ -185,21 +185,10 @@ async def get_schedules(
         .offset((page - 1) * page_size)
         .limit(page_size)
         .prefetch_related("chat", "prompt")
-        .values(
-            "id",
-            "prompt_id",
-            "schedule_type",
-            "enabled",
-            "company_id",
-            "chat_id",
-            "created_at",
-            "bot_id",
-            "message_intro",
-        )
     )
     return ScheduleListSchema(
         total=total_count,
-        schedules=[ScheduleShortSchema(**schedule) for schedule in schedules],
+        schedules=[ScheduleShortSchema.model_validate(schedule) for schedule in schedules],
     )
 
 
@@ -212,9 +201,10 @@ async def get_schedule(schedule_id: UUID, context=Depends(require_permission_in_
     target_chat_ids = await TargetChat.filter(schedule=schedule).prefetch_related("chat").all()
     target_chats = [target_chat.chat.id for target_chat in target_chat_ids]
     return ScheduleSchema(
+        schedule_strategy=schedule.schedule_strategy,
         schedule_id=schedule.id,
-        prompt_id=schedule.prompt.id,
-        chat_id=schedule.chat.id,
+        prompt_id=schedule.prompt.id if schedule.prompt else None,
+        chat_id=schedule.chat.id if schedule.chat else None,
         message_intro=schedule.message_intro,
         schedule_type=schedule.schedule_type,
         interval_hours=schedule.interval_hours,

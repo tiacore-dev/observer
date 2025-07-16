@@ -31,18 +31,14 @@ from app.database.models import ChatSchedule
 
 
 @pytest.mark.asyncio
-async def test_view_schedule(
-    test_app: AsyncClient, jwt_token_admin, seed_schedule: ChatSchedule
-):
+async def test_view_schedule(test_app: AsyncClient, jwt_token_admin, seed_schedule: ChatSchedule):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
     response = await test_app.get(f"/api/schedules/{seed_schedule.id}", headers=headers)
-    assert response.status_code == 200, (
-        f"Ошибка: {response.status_code}, {response.text}"
-    )
+    assert response.status_code == 200, f"Ошибка: {response.status_code}, {response.text}"
 
     data = response.json()
     assert data["schedule_id"] == str(seed_schedule.id)
-    assert data["prompt_id"] == str(seed_schedule.prompt.id)
+    assert data["prompt_id"] == str(seed_schedule.prompt.id)  # type: ignore
 
 
 # @pytest.mark.asyncio
@@ -85,15 +81,11 @@ async def test_view_schedule(
 
 
 @pytest.mark.asyncio
-async def test_get_schedules(
-    test_app: AsyncClient, jwt_token_admin, seed_schedule: ChatSchedule
-):
+async def test_get_schedules(test_app: AsyncClient, jwt_token_admin, seed_schedule: ChatSchedule):
     headers = {"Authorization": f"Bearer {jwt_token_admin['access_token']}"}
     response = await test_app.get("/api/schedules/all", headers=headers)
 
-    assert response.status_code == 200, (
-        f"Ошибка: {response.status_code}, {response.text}"
-    )
+    assert response.status_code == 200, f"Ошибка: {response.status_code}, {response.text}"
 
     data = response.json()
     assert "schedules" in data

@@ -1,4 +1,5 @@
 import uuid
+from enum import Enum
 
 from tortoise import fields
 from tortoise.fields.relational import ReverseRelation
@@ -108,15 +109,34 @@ class Message(Model):
         table = "messages"
 
 
+class ScheduleStrategy(str, Enum):
+    ANALYSIS = "analysis"
+    NOTIFICATION = "notification"
+
+
+class ScheduleType(str, Enum):
+    INTERVAL = "interval"
+    DAILY_TIME = "daily_time"
+    CRON = "cron"
+    ONCE = "once"
+
+
+class SendStrategy(str, Enum):
+    FIXED = "fixed"
+    RELATIVE = "relative"
+
+
 class ChatSchedule(Model):
     id = fields.UUIDField(pk=True, default=uuid.uuid4)
 
-    chat = fields.ForeignKeyField("models.Chat", related_name="schedules")
-    prompt = fields.ForeignKeyField("models.Prompt", related_name="schedules")
+    schedule_strategy = fields.CharEnumField(ScheduleStrategy)
 
-    # 'interval', 'daily_time', 'cron', 'once'
-    schedule_type = fields.CharField(max_length=20)
+    chat = fields.ForeignKeyField("models.Chat", related_name="schedules", null=True)
+    prompt = fields.ForeignKeyField("models.Prompt", related_name="schedules", null=True)
 
+    schedule_type = fields.CharEnumField(ScheduleType)
+
+    # Стратегия: анализ
     # --- Тип: interval ---
     interval_hours = fields.IntField(null=True)
     interval_minutes = fields.IntField(null=True)
@@ -130,13 +150,16 @@ class ChatSchedule(Model):
     # --- Тип: once ---
     run_at = fields.DatetimeField(null=True)
 
+    # Стратегия напоминание
+    notification_text = fields.TextField(null=True)
+
     # Общие поля:
     enabled = fields.BooleanField(default=True)
     last_run_at = fields.DatetimeField(null=True)
 
     created_at = fields.DatetimeField(auto_now_add=True)
 
-    send_strategy = fields.CharField(max_length=10, default="fixed")  # fixed или relative
+    send_strategy = fields.CharEnumField(SendStrategy, default="fixed", null=True)
     send_after_minutes = fields.IntField(null=True)
     time_to_send = fields.TimeField(null=True)
     company_id = fields.UUIDField()
@@ -153,7 +176,7 @@ class ChatSchedule(Model):
 
     def __repr__(self):
         return f"""<ChatSchedules(schedule_id={self.id}, 
-        chat={self.chat.id}, type='{self.schedule_type}')>"""
+         type='{self.schedule_type}')>"""
 
     class Meta:
         table = "chat_schedules"

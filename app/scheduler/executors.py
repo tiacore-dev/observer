@@ -3,9 +3,9 @@ from uuid import UUID
 
 from loguru import logger
 
-from app.database.models import AnalysisResult, Bot, Chat, ChatSchedule, TargetChat
+from app.database.models import AnalysisResult, Bot, Chat, ChatSchedule, ScheduleStrategy, TargetChat
 from app.scheduler.init_scheduler import scheduler
-from app.scheduler.tasks import analyze, save_analysis_result, send_analysis_result
+from app.scheduler.tasks import analyze, save_analysis_result, send_analysis_result, send_notification
 from metrics.analysis_metrics import AnalysisMetrics
 
 metrics = AnalysisMetrics()
@@ -15,71 +15,76 @@ async def execute_analysis(schedule: ChatSchedule, settings):
     """
     Выполняет анализ сообщений для указанного чата и отправляет результат.
     """
-    try:
-        logger.info(f"Выполнение анализа для чата {schedule.chat.id}.")
-        data = await analyze(schedule, settings)
-        analysis_id = await save_analysis_result(data)
 
-        if analysis_id:
-            now = datetime.now(timezone.utc)
+    logger.info(f"Выполнение расписания: {schedule.id}")
+    if schedule.schedule_strategy == ScheduleStrategy.ANALYSIS and schedule.chat and schedule.prompt:
+        try:
+            data = await analyze(schedule, settings)
+            analysis_id = await save_analysis_result(data)
 
-            if schedule.send_strategy == "fixed":
-                if schedule.time_to_send is None:
-                    logger.warning("time_to_send не указано при стратегии 'fixed'")
-                    await send_tasks(schedule, analysis_id)
-                    return
+            if analysis_id:
+                now = datetime.now(timezone.utc)
 
-                send_time_today = now.replace(
-                    hour=schedule.time_to_send.hour,
-                    minute=schedule.time_to_send.minute,
-                    second=0,
-                    microsecond=0,
-                )
+                if schedule.send_strategy == "fixed":
+                    if schedule.time_to_send is None:
+                        logger.warning("time_to_send не указано при стратегии 'fixed'")
+                        await send_analysis_tasks(schedule, analysis_id)
+                        return
 
-                if now >= send_time_today:
-                    logger.info("Время отправки уже наступило, отправляем результат сразу.")
-                    await send_tasks(schedule, analysis_id)
-                else:
-                    schedule_sending(schedule, analysis_id, send_time_today)
-
-            elif schedule.send_strategy == "relative":
-                if schedule.send_after_minutes is None:
-                    logger.warning("send_after_minutes не указано при стратегии 'relative'")
-                    # fallback: отправляем сразу
-                    await send_tasks(schedule, analysis_id)
-                else:
-                    send_time = now + timedelta(minutes=schedule.send_after_minutes)
-                    logger.info(
-                        f"""Планируем отправку через {schedule.send_after_minutes} 
-                        минут — в {send_time}"""
+                    send_time_today = now.replace(
+                        hour=schedule.time_to_send.hour,
+                        minute=schedule.time_to_send.minute,
+                        second=0,
+                        microsecond=0,
                     )
-                    schedule_sending(schedule, analysis_id, send_time)
 
-            else:
-                logger.warning(
-                    f"""Неизвестная стратегия отправки: 
-                    {schedule.send_strategy}. Отправляем сразу."""
-                )
-                await send_tasks(schedule, analysis_id)
-        schedule.last_run_at = datetime.now(timezone.utc)
-        await schedule.save()
-        logger.info(f"Анализ завершён для чата {schedule.chat.id}.")
+                    if now >= send_time_today:
+                        logger.info("Время отправки уже наступило, отправляем результат сразу.")
+                        await send_analysis_tasks(schedule, analysis_id)
+                    else:
+                        schedule_sending_analysis(schedule, analysis_id, send_time_today)
 
-        metrics.inc_success(chat_id=str(schedule.chat.id), schedule_id=str(schedule.id))
+                elif schedule.send_strategy == "relative":
+                    if schedule.send_after_minutes is None:
+                        logger.warning("send_after_minutes не указано при стратегии 'relative'")
+                        # fallback: отправляем сразу
+                        await send_analysis_tasks(schedule, analysis_id)
+                    else:
+                        send_time = now + timedelta(minutes=schedule.send_after_minutes)
+                        logger.info(
+                            f"""Планируем отправку через {schedule.send_after_minutes} 
+                            минут — в {send_time}"""
+                        )
+                        schedule_sending_analysis(schedule, analysis_id, send_time)
 
-        if schedule.schedule_type == "once":
-            schedule.enabled = False
+                else:
+                    logger.warning(
+                        f"""Неизвестная стратегия отправки: 
+                        {schedule.send_strategy}. Отправляем сразу."""
+                    )
+                    await send_analysis_tasks(schedule, analysis_id)
+            schedule.last_run_at = datetime.now(timezone.utc)
             await schedule.save()
-            logger.info(f"🧹 Расписание {schedule.id} деактивировано.")
+            logger.info(f"Анализ завершён для чата {schedule.chat.id}.")
 
-    except Exception as e:
-        logger.error(f"Ошибка при выполнении анализа для чата {schedule.chat.id}: {e}")
-        metrics.inc_failure(chat_id=str(schedule.chat.id), schedule_id=str(schedule.id))
+            metrics.inc_success(chat_id=str(schedule.chat.id), schedule_id=str(schedule.id))
+
+            if schedule.schedule_type == "once":
+                schedule.enabled = False
+                await schedule.save()
+                logger.info(f"🧹 Расписание {schedule.id} деактивировано.")
+
+        except Exception as e:
+            logger.error(f"Ошибка при выполнении анализа {schedule.id}: {e}")
+            metrics.inc_failure(chat_id=str(schedule.chat.id), schedule_id=str(schedule.id))
+
+    if schedule.schedule_strategy == ScheduleStrategy.NOTIFICATION and schedule.notification_text:
+        await send_notification(schedule)
 
 
-def schedule_sending(schedule: ChatSchedule, analysis_id: UUID, run_at: datetime):
+def schedule_sending_analysis(schedule: ChatSchedule, analysis_id: UUID, run_at: datetime):
     scheduler.add_job(
-        send_tasks,
+        send_analysis_tasks,
         trigger="date",
         run_date=run_at,
         args=[schedule, analysis_id],
@@ -88,7 +93,7 @@ def schedule_sending(schedule: ChatSchedule, analysis_id: UUID, run_at: datetime
     )
 
 
-async def send_tasks(schedule: ChatSchedule, analysis_id):
+async def send_analysis_tasks(schedule: ChatSchedule, analysis_id):
     """
     Проверяет задачи, запланированные на текущий час, и выполняет их.
     """
@@ -98,7 +103,7 @@ async def send_tasks(schedule: ChatSchedule, analysis_id):
 
     try:
         # Получение всех чатов с активным расписанием
-        chat = await Chat.get_or_none(id=schedule.chat.id)
+        chat = await Chat.get_or_none(id=schedule.chat.id)  # type: ignore
         if chat is None:
             logger.error(f"Чат не найден для расписания {schedule.id}")
             return

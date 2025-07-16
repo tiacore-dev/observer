@@ -1,17 +1,21 @@
 from datetime import datetime, time
-from typing import List, Literal, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Query
-from pydantic import Field, field_validator, model_validator
-from tiacore_lib.pydantic_models.clean_model import CleanableBaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from app.database.models import ScheduleStrategy, ScheduleType, SendStrategy
 
 
-class ScheduleCreateSchema(CleanableBaseModel):
-    chat_id: int = Field(...)
-    prompt_id: UUID = Field(...)
-    schedule_type: str = Field(...)
+class ScheduleCreateSchema(BaseModel):
+    schedule_strategy: ScheduleStrategy
+    chat_id: Optional[int] = Field(None)
+    prompt_id: Optional[UUID] = Field(None)
+    schedule_type: ScheduleType = Field(...)
+
+    notification_text: Optional[str] = Field(None)
     message_intro: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = Field(None)
@@ -25,8 +29,8 @@ class ScheduleCreateSchema(CleanableBaseModel):
     bot_id: int = Field(...)
     enabled: Optional[bool] = True
 
-    send_strategy: Literal["fixed", "relative"] = Field(
-        ...,
+    send_strategy: Optional[SendStrategy] = Field(
+        None,
         description="fixed — в указанное время, relative — через X минут после анализа",
     )
     time_to_send: Optional[time] = Field(None)
@@ -69,34 +73,27 @@ class ScheduleCreateSchema(CleanableBaseModel):
         if self.send_strategy == "relative" and self.send_after_minutes is None:
             raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
 
+        if (
+            self.schedule_strategy == ScheduleStrategy.ANALYSIS
+            and not self.prompt_id
+            and not self.chat_id
+            and not self.send_strategy
+        ):
+            raise ValueError("Для анализа необходимы промпт и анализируемый чат")
+
+        if self.schedule_strategy == ScheduleStrategy.NOTIFICATION and not self.notification_text:
+            raise ValueError("Для уведомления обязательно указать текст сообщения")
         return self
 
-    # @model_validator(mode="before")
-    # def normalize_datetime_fields(cls, values: dict):
-    #     utc = ZoneInfo("UTC")
 
-    #     def to_utc(dt: datetime) -> datetime:
-    #         return dt.astimezone(utc)
+class ScheduleEditSchema(BaseModel):
+    schedule_strategy: Optional[ScheduleStrategy] = Field(None)
+    notification_text: Optional[str] = Field(None)
 
-    #     if run_at := values.get("run_at"):
-    #         if isinstance(run_at, datetime):
-    #             values["run_at"] = to_utc(run_at)
-
-    #     if time_to_send := values.get("time_to_send"):
-    #         if isinstance(time_to_send, time) and time_to_send.tzinfo:
-    #             values["time_to_send"] = time_to_send.replace(tzinfo=None)
-
-    #     if time_of_day := values.get("time_of_day"):
-    #         if isinstance(time_of_day, time) and time_of_day.tzinfo:
-    #             values["time_of_day"] = time_of_day.replace(tzinfo=None)
-
-    #     return values
-
-
-class ScheduleEditSchema(CleanableBaseModel):
     chat_id: Optional[int] = Field(None)
     prompt_id: Optional[UUID] = Field(None)
-    schedule_type: Optional[str] = Field(None)
+    schedule_type: Optional[ScheduleType] = Field(None)
+
     message_intro: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = Field(None)
@@ -110,7 +107,7 @@ class ScheduleEditSchema(CleanableBaseModel):
     bot_id: Optional[int] = Field(None)
     enabled: Optional[bool] = Field(None)
 
-    send_strategy: Optional[Literal["fixed", "relative"]] = Field(None)
+    send_strategy: Optional[SendStrategy] = Field(None)
     time_to_send: Optional[time] = Field(None)
     send_after_minutes: Optional[int] = Field(None)
 
@@ -126,58 +123,16 @@ class ScheduleEditSchema(CleanableBaseModel):
                 raise ValueError(f"Некорректное cron-выражение: {e}") from e
         return value
 
-    @model_validator(mode="after")
-    def validate_schedule_edit(self):
-        # Тип расписания
-        if self.schedule_type == "interval" and not (self.interval_hours or self.interval_minutes):
-            raise ValueError("Для типа interval нужно указать interval_hours или interval_minutes")
 
-        if self.schedule_type == "daily_time" and not self.time_of_day:
-            raise ValueError("Для типа daily_time нужно указать time_of_day")
-
-        if self.schedule_type == "cron" and not self.cron_expression:
-            raise ValueError("Для типа cron нужно указать cron_expression")
-
-        if self.schedule_type == "once" and not self.run_at:
-            raise ValueError("Для типа once нужно указать run_at")
-
-        # Стратегия отправки
-        if self.send_strategy == "fixed" and not self.time_to_send:
-            raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
-
-        if self.send_strategy == "relative" and self.send_after_minutes is None:
-            raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
-
-        return self
-
-    # @model_validator(mode="before")
-    # def normalize_datetime_fields(cls, values: dict):
-    #     utc = ZoneInfo("UTC")
-
-    #     def to_utc(dt: datetime) -> datetime:
-    #         return dt.astimezone(utc)
-
-    #     if run_at := values.get("run_at"):
-    #         if isinstance(run_at, datetime):
-    #             values["run_at"] = to_utc(run_at)
-
-    #     if time_to_send := values.get("time_to_send"):
-    #         if isinstance(time_to_send, time) and time_to_send.tzinfo:
-    #             values["time_to_send"] = time_to_send.replace(tzinfo=None)
-
-    #     if time_of_day := values.get("time_of_day"):
-    #         if isinstance(time_of_day, time) and time_of_day.tzinfo:
-    #             values["time_of_day"] = time_of_day.replace(tzinfo=None)
-
-    #     return values
-
-
-class ScheduleSchema(CleanableBaseModel):
+class ScheduleSchema(BaseModel):
     id: UUID = Field(..., alias="schedule_id")
-    chat_id: int
-    prompt_id: UUID
+    schedule_strategy: ScheduleStrategy
+    notification_text: Optional[str] = None
+    chat_id: Optional[int] = Field(None)
+    prompt_id: Optional[UUID] = Field(None)
     company_id: UUID
-    schedule_type: str
+    schedule_type: ScheduleType
+
     message_intro: Optional[str] = Field(None)
 
     interval_hours: Optional[int] = None
@@ -189,7 +144,7 @@ class ScheduleSchema(CleanableBaseModel):
     enabled: bool
     last_run_at: Optional[datetime] = None
     created_at: datetime
-    send_strategy: str
+    send_strategy: Optional[SendStrategy] = None
     time_to_send: Optional[time] = None
     send_after_minutes: Optional[int] = None
 
@@ -202,10 +157,10 @@ class ScheduleSchema(CleanableBaseModel):
         populate_by_name = True
 
 
-class ScheduleShortSchema(CleanableBaseModel):
+class ScheduleShortSchema(BaseModel):
     id: UUID = Field(..., alias="schedule_id")
-    prompt_id: UUID
-    schedule_type: str
+    prompt_id: Optional[UUID] = Field(None)
+    schedule_type: ScheduleType
     enabled: bool
     company_id: UUID
     chat_id: int
@@ -217,19 +172,19 @@ class ScheduleShortSchema(CleanableBaseModel):
         populate_by_name = True
 
 
-class ScheduleListSchema(CleanableBaseModel):
+class ScheduleListSchema(BaseModel):
     total: int
     schedules: List[ScheduleShortSchema]
 
 
-class ScheduleResponseSchema(CleanableBaseModel):
+class ScheduleResponseSchema(BaseModel):
     schedule_id: UUID
 
 
 def schedule_filter_params(
     company_id: Optional[UUID] = Query(None),
     chat_id: Optional[UUID] = Query(None),
-    schedule_type: Optional[str] = Query(None),
+    schedule_type: Optional[ScheduleType] = Query(None),
     enabled: Optional[bool] = Query(None),
     sort_by: Optional[str] = Query("schedule_type", description="Поле сортировки"),
     order: Optional[str] = Query("asc", description="asc / desc"),

@@ -5,13 +5,7 @@ from datetime import datetime, timezone
 from aiogram import Bot
 from loguru import logger
 
-from app.database.models import (
-    AnalysisResult,
-    Chat,
-    ChatSchedule,
-    Message,
-    Prompt,
-)
+from app.database.models import AnalysisResult, Chat, ChatSchedule, Message, Prompt, TargetChat
 from app.yandex_funcs.yandex_funcs import yandex_analyze
 
 
@@ -19,7 +13,7 @@ async def analyze(schedule: ChatSchedule, settings):
     """
     Анализирует сообщения в чате за указанный временной промежуток.
     """
-    chat_id = schedule.chat.id
+    chat_id = schedule.chat.id  # type: ignore
     logger.info(f"Начало анализа для чата {chat_id}")
     chat = await Chat.get_or_none(id=chat_id)
     if not chat:
@@ -61,29 +55,29 @@ async def analyze(schedule: ChatSchedule, settings):
         logger.error(f"Ошибка при получении сообщений: {e}")
         raise
 
-    # if not messages:
-    #     logger.warning(
-    #         f"""Нет сообщений для анализа в чате {chat_id} за
-    #         период {analysis_start} - {analysis_end}."""
-    #     )
-    #     return {
-    #         "chat": chat,
-    #         "analysis_result": None,
-    #         "tokens_input": 0,
-    #         "tokens_output": 0,
-    #         "prompt": schedule.prompt,
-    #         "date_to": analysis_end,
-    #         "date_from": analysis_start,
-    #         "schedule": schedule,
-    #         "company_id": schedule.company_id,
-    #     }
+    if not messages:
+        logger.warning(
+            f"""Нет сообщений для анализа в чате {chat_id} за
+            период {analysis_start} - {analysis_end}."""
+        )
+        return {
+            "chat": chat,
+            "analysis_result": None,
+            "tokens_input": 0,
+            "tokens_output": 0,
+            "prompt": schedule.prompt,
+            "date_to": analysis_end,
+            "date_from": analysis_start,
+            "schedule": schedule,
+            "company_id": schedule.company_id,
+        }
 
     logger.info(f"Сообщений для анализа найдено: {len(messages)}")
 
     try:
-        prompt = await Prompt.get_or_none(id=schedule.prompt.id)
+        prompt = await Prompt.get_or_none(id=schedule.prompt.id)  # type: ignore
         if not prompt:
-            raise ValueError(f"Промпт с ID {schedule.prompt.id} не найден.")
+            raise ValueError(f"Промпт с ID {schedule.prompt.id} не найден.")  # type: ignore
 
         analysis_result, tokens_input, tokens_output = await yandex_analyze(prompt.id, messages, settings)
 
@@ -152,6 +146,35 @@ async def send_analysis_result(target_chats: list[Chat], chat_name, bot_token, a
     except Exception as e:
         logger.error(
             f"""Ошибка при отправке результата в Telegram для чата {chat_name}: {e}""",
+            exc_info=True,
+        )
+    finally:
+        await bot.session.close()
+
+
+async def send_notification(schedule: ChatSchedule):
+    """
+    Отправляет результат анализа в Telegram.
+    """
+    bot_token = schedule.bot.bot_token
+    bot = Bot(bot_token)
+
+    me = await bot.get_me()
+    logger.debug(f"🤖 Бот: {me.username} ({me.id})")
+    if not schedule.message_intro:
+        message_intro = ""
+    message_text = f"""{message_intro}
+                {schedule.notification_text}"""
+    target_chats = await TargetChat.filter(schedule=schedule).prefetch_related("chat").all()
+    chats = [target_chat.chat for target_chat in target_chats]
+    try:
+        for chat in chats:
+            logger.debug(f"📨 Пытаемся отправить в chat_id={chat.id} ({type(chat.id)})")
+            await bot.send_message(chat_id=chat.id, text=message_text)
+        logger.info("Уведомления успешно отправлены")
+    except Exception as e:
+        logger.error(
+            f"""Ошибка при отправке уведомлений в Telegram: {e}""",
             exc_info=True,
         )
     finally:

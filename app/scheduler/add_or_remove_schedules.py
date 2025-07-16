@@ -15,11 +15,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
         f"""Создаём задачу:
         ├─ ID: {job_id}
         ├─ Тип: {sched.schedule_type}
-        ├─ Активно: {sched.enabled}
-        ├─ Период: hours={sched.interval_hours}, minutes={sched.interval_minutes}
-        ├─ Time of day: {sched.time_of_day}
-        ├─ Cron: {sched.cron_expression}
-        └─ Once: {sched.run_at}"""
+       """
     )
 
     if not sched.enabled:
@@ -67,9 +63,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
 
             trigger = CronTrigger.from_crontab(sched.cron_expression)
         except Exception as e:
-            logger.warning(
-                f"⚠️ Задача {job_id} не добавлена: ошибка в cron-выражении: {e}"
-            )
+            logger.warning(f"⚠️ Задача {job_id} не добавлена: ошибка в cron-выражении: {e}")
             return
 
         scheduler.add_job(
@@ -107,9 +101,7 @@ def add_schedule_job(sched: ChatSchedule, settings):
         logger.warning(f"❓ Неизвестный тип задачи: {sched.schedule_type}")
         return
 
-    logger.success(
-        f"🗓️ Задача {job_id} ({sched.schedule_type}) добавлена в планировщик."
-    )
+    logger.success(f"🗓️ Задача {job_id} ({sched.schedule_type}) добавлена в планировщик.")
 
 
 def remove_schedule_job(schedule_id):
@@ -119,8 +111,6 @@ def remove_schedule_job(schedule_id):
             scheduler.remove_job(str(schedule_id))
             logger.info(f"🗑️ Задача {schedule_id} удалена из планировщика.")
         else:
-            logger.warning(
-                f"⚠️ Задача {schedule_id} не найдена — возможно, уже выполнена."
-            )
+            logger.warning(f"⚠️ Задача {schedule_id} не найдена — возможно, уже выполнена.")
     except Exception as e:
         logger.warning(f"⚠️ Не удалось удалить задачу {schedule_id}: {e}")
