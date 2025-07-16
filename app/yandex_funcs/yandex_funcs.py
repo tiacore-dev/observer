@@ -50,9 +50,7 @@ async def transcribe_audio(audio: bytes, file_format: str, settings):
                 audio_data = await f.read()
 
             data = aiohttp.FormData()
-            data.add_field(
-                "file", audio_data, filename="audio.wav", content_type="audio/wav"
-            )
+            data.add_field("file", audio_data, filename="audio.wav", content_type="audio/wav")
 
             async with session.post(
                 settings.YANDEX_SPEECHKIT_API_URL,
@@ -75,23 +73,25 @@ async def transcribe_audio(audio: bytes, file_format: str, settings):
 
 
 # Асинхронный анализ текста через YandexGPT
-async def yandex_analyze(prompt_id: UUID, messages: list[Message], settings):
+async def yandex_analyze(prompt_id: UUID, messages: list[Message] | None, settings):
     logger.info("Начало анализа набора сообщений.")
     prompt = await Prompt.get(id=prompt_id)
     api_messages = []
-    for message in messages:
-        if message.text:
-            user = message.account.username
-            chat = message.chat.name
+    if messages:
+        for message in messages:
+            if message.text:
+                user = message.account.username
+                chat = message.chat.name
 
-            message_data = {
-                "user": user,
-                "chat": chat,
-                "timestamp": message.timestamp.isoformat(),
-                "text": message.text,
-            }
-            api_messages.append(json.dumps(message_data, ensure_ascii=False))
-
+                message_data = {
+                    "user": user,
+                    "chat": chat,
+                    "timestamp": message.timestamp.isoformat(),
+                    "text": message.text,
+                }
+                api_messages.append(json.dumps(message_data, ensure_ascii=False))
+    else:
+        message_data = " "
     headers = {
         "Authorization": f"Api-Key {settings.YANDEX_API_KEY}",
         "Content-Type": "application/json",

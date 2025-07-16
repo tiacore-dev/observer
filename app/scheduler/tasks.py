@@ -61,22 +61,22 @@ async def analyze(schedule: ChatSchedule, settings):
         logger.error(f"Ошибка при получении сообщений: {e}")
         raise
 
-    if not messages:
-        logger.warning(
-            f"""Нет сообщений для анализа в чате {chat_id} за 
-            период {analysis_start} - {analysis_end}."""
-        )
-        return {
-            "chat": chat,
-            "analysis_result": None,
-            "tokens_input": 0,
-            "tokens_output": 0,
-            "prompt": schedule.prompt,
-            "date_to": analysis_end,
-            "date_from": analysis_start,
-            "schedule": schedule,
-            "company_id": schedule.company_id,
-        }
+    # if not messages:
+    #     logger.warning(
+    #         f"""Нет сообщений для анализа в чате {chat_id} за
+    #         период {analysis_start} - {analysis_end}."""
+    #     )
+    #     return {
+    #         "chat": chat,
+    #         "analysis_result": None,
+    #         "tokens_input": 0,
+    #         "tokens_output": 0,
+    #         "prompt": schedule.prompt,
+    #         "date_to": analysis_end,
+    #         "date_from": analysis_start,
+    #         "schedule": schedule,
+    #         "company_id": schedule.company_id,
+    #     }
 
     logger.info(f"Сообщений для анализа найдено: {len(messages)}")
 
@@ -141,7 +141,8 @@ async def send_analysis_result(target_chats: list[Chat], chat_name, bot_token, a
     logger.debug(f"🤖 Бот: {me.username} ({me.id})")
     if not message_intro:
         message_intro = ""
-    message_text = f"""{message_intro}{analysis_result}"""
+    message_text = f"""{message_intro}
+                {analysis_result}"""
 
     try:
         for chat in target_chats:
