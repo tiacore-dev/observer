@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -21,8 +20,8 @@ async def seed_schedule(seed_prompt: Prompt, seed_chat: Chat, seed_bot: Bot):
         schedule_strategy=ScheduleStrategy.ANALYSIS,
         prompt=seed_prompt,
         chat=seed_chat,
-        schedule_type=ScheduleType.ONCE,
-        run_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+        schedule_type=ScheduleType.INTERVAL,
+        interval_minutes=1,
         enabled=True,
         send_strategy=SendStrategy.FIXED,
         time_to_send="16:30:00",

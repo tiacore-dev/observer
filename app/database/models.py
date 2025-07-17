@@ -116,9 +116,7 @@ class ScheduleStrategy(str, Enum):
 
 class ScheduleType(str, Enum):
     INTERVAL = "interval"
-    DAILY_TIME = "daily_time"
     CRON = "cron"
-    ONCE = "once"
 
 
 class SendStrategy(str, Enum):
@@ -141,16 +139,10 @@ class ChatSchedule(Model):
     interval_hours = fields.IntField(null=True)
     interval_minutes = fields.IntField(null=True)
 
-    # --- Тип: daily_time ---
-    time_of_day = fields.TimeField(null=True)  # типа 05:00 каждый день
-
     # --- Тип: cron ---
     cron_expression = fields.CharField(max_length=100, null=True)  # '0 5 * * *'
 
-    # --- Тип: once ---
-    run_at = fields.DatetimeField(null=True)
-
-    # Стратегия напоминание
+    # Стратегия: напоминание
     notification_text = fields.TextField(null=True)
 
     # Общие поля:

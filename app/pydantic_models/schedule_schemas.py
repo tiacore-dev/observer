@@ -20,9 +20,7 @@ class ScheduleCreateSchema(BaseModel):
 
     interval_hours: Optional[int] = Field(None)
     interval_minutes: Optional[int] = Field(None)
-    time_of_day: Optional[time] = Field(None)
     cron_expression: Optional[str] = Field(None)
-    run_at: Optional[datetime] = Field(None)
 
     company_id: UUID = Field(...)
     target_chats: List[int] = Field(...)
@@ -50,39 +48,32 @@ class ScheduleCreateSchema(BaseModel):
     def validate_required_fields(self):
         # Валидация типа расписания
         match self.schedule_type:
-            case "interval":
+            case ScheduleType.INTERVAL:
                 if self.interval_hours is None and self.interval_minutes is None:
                     raise ValueError(
                         """Для типа interval необходимо указать 
                         interval_hours или interval_minutes"""
                     )
-            case "daily_time":
-                if self.time_of_day is None:
-                    raise ValueError("Для типа daily_time необходимо указать time_of_day")
-            case "cron":
+
+            case ScheduleType.CRON:
                 if self.cron_expression is None:
                     raise ValueError("Для типа cron необходимо указать cron_expression")
-            case "once":
-                if self.run_at is None:
-                    raise ValueError("Для типа once необходимо указать run_at")
-
         # Валидация стратегии отправки
-        if self.send_strategy == "fixed" and not self.time_to_send:
-            raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
+        match self.send_strategy:
+            case SendStrategy.FIXED:
+                if not self.time_to_send:
+                    raise ValueError("Для стратегии 'fixed' необходимо указать time_to_send")
 
-        if self.send_strategy == "relative" and self.send_after_minutes is None:
-            raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
-
-        if (
-            self.schedule_strategy == ScheduleStrategy.ANALYSIS
-            and not self.prompt_id
-            and not self.chat_id
-            and not self.send_strategy
-        ):
-            raise ValueError("Для анализа необходимы промпт и анализируемый чат")
-
-        if self.schedule_strategy == ScheduleStrategy.NOTIFICATION and not self.notification_text:
-            raise ValueError("Для уведомления обязательно указать текст сообщения")
+            case SendStrategy.RELATIVE:
+                if not self.send_after_minutes:
+                    raise ValueError("Для стратегии 'relative' необходимо указать send_after_minutes")
+        match self.schedule_strategy:
+            case ScheduleStrategy.ANALYSIS:
+                if not self.prompt_id and not self.chat_id and not self.send_strategy:
+                    raise ValueError("Для анализа необходимы промпт и анализируемый чат")
+            case ScheduleStrategy.NOTIFICATION:
+                if not self.notification_text:
+                    raise ValueError("Для уведомления обязательно указать текст сообщения")
         return self
 
 
@@ -98,9 +89,8 @@ class ScheduleEditSchema(BaseModel):
 
     interval_hours: Optional[int] = Field(None)
     interval_minutes: Optional[int] = Field(None)
-    time_of_day: Optional[time] = Field(None)
+
     cron_expression: Optional[str] = Field(None)
-    run_at: Optional[datetime] = Field(None)
 
     target_chats: Optional[List[int]] = Field(None)
     removed_chats: Optional[List[int]] = Field(None)
@@ -137,9 +127,8 @@ class ScheduleSchema(BaseModel):
 
     interval_hours: Optional[int] = None
     interval_minutes: Optional[int] = None
-    time_of_day: Optional[time] = None
+
     cron_expression: Optional[str] = None
-    run_at: Optional[datetime] = None
 
     enabled: bool
     last_run_at: Optional[datetime] = None
