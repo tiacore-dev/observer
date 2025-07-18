@@ -155,6 +155,7 @@ class ScheduleShortSchema(BaseModel):
     chat_id: int
     created_at: datetime
     bot_id: int
+    last_run_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -39,9 +39,7 @@ async def set_bot_webhook(
 
 
 @webhook_router.delete("/{bot_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_bot_webhook(
-    bot_id: int, context=Depends(require_permission_in_context("delete_webhook"))
-):
+async def delete_bot_webhook(bot_id: int, context=Depends(require_permission_in_context("delete_webhook"))):
     bot = await Bot.get_or_none(id=bot_id)
     if not bot:
         raise HTTPException(status_code=404, detail="Бот не найден")
@@ -56,9 +54,7 @@ async def delete_bot_webhook(
 
 
 @webhook_router.get("/{bot_id}/info")
-async def get_bot_webhook_info(
-    bot_id: int, context=Depends(require_permission_in_context("view_webhook_info"))
-):
+async def get_bot_webhook_info(bot_id: int, context=Depends(require_permission_in_context("view_webhook_info"))):
     bot = await Bot.get_or_none(id=bot_id)
     if not bot:
         raise HTTPException(status_code=404, detail="Бот не найден")
